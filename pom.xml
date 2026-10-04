@@ -214,7 +214,7 @@
 		     BjlShell project directly, so a Maven build couldn't find it (BJL-27) -->
 		<dependency>
 			<groupId>us.bringardner</groupId>
-			<artifactId>bjl_file_system_console</artifactId>
+			<artifactId>bjl_shell</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
