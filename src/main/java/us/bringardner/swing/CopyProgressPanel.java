@@ -29,6 +29,7 @@ import us.bringardner.core.BaseThread;
 import us.bringardner.io.filesource.FileSource;
 import us.bringardner.io.filesource.viewer.FileSourceViewer;
 import us.bringardner.swing.MessageDialog.Response;
+import us.bringardner.io.IoUtils;
 
 public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyProgressListner {
 	private static int idTracker = 0;
@@ -113,16 +114,10 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 				error(e);				
 			} finally {
 				if( out!=null ) {
-					try {
-						out.close();
-					} catch (Exception e2) {
-					}
+					IoUtils.closeQuietly(out);
 				}
 				if( in!=null ) {
-					try {
-						in.close();
-					} catch (Exception e2) {
-					}
+					IoUtils.closeQuietly(in);
 				}
 				copyComplete();
 				running = false;												

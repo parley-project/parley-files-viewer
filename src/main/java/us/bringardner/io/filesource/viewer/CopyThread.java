@@ -36,6 +36,7 @@ import us.bringardner.io.filesource.FileSourceFactory;
 import us.bringardner.io.filesource.fileproxy.FileProxy;
 import us.bringardner.io.filesource.sftp.SftpFileSourceFactory;
 import us.bringardner.io.filesource.viewer.FileSourceViewer.CopyProgressListner;
+import us.bringardner.io.IoUtils;
 
 public class CopyThread extends BaseThread {
 
@@ -221,16 +222,10 @@ public class CopyThread extends BaseThread {
 			}
 		} finally {
 			if( out!=null ) {
-				try {
-					out.close();
-				} catch (Exception e2) {
-				}
+				IoUtils.closeQuietly(out);
 			}
 			if( in!=null ) {
-				try {
-					in.close();
-				} catch (Exception e2) {
-				}
+				IoUtils.closeQuietly(in);
 			}
 			running = false;
 			if( listener != null ) {
