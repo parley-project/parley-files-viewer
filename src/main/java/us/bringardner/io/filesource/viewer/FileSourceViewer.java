@@ -143,7 +143,6 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import us.bringardner.core.SecureBaseObject;
-import us.bringardner.io.filesource.FactoryPropertiesDialog;
 import us.bringardner.io.filesource.FileSource;
 import us.bringardner.io.filesource.FileSourceChooserDialog;
 import us.bringardner.io.filesource.FileSourceFactory;

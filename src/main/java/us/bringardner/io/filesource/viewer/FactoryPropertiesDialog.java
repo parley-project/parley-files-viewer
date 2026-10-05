@@ -29,7 +29,7 @@
  * 
  */
 
-package us.bringardner.io.filesource;
+package us.bringardner.io.filesource.viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -51,6 +51,8 @@ import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import us.bringardner.swing.MessageDialog;
+import us.bringardner.io.filesource.FileSourceFactory;
+import us.bringardner.io.filesource.IConnectionPropertiesEditor;
 
 /**
  *

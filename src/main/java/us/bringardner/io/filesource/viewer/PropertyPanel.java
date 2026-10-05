@@ -23,10 +23,12 @@
  *
  * ~version~V000.01.18-
  * 
- * This replaces the property panel in BjlFileSystem to have a better look and feel
+ * The viewer's version of BjlFileSystem's PropertyPanel, with a different look and feel.
+ * It used to have the same full name as BjlFileSystem's class, so inside the viewer it
+ * silently replaced it everywhere (BjlFileSystem's own dialogs included).
  *  
  */
-package us.bringardner.io.filesource;
+package us.bringardner.io.filesource.viewer;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -42,6 +44,8 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
+import us.bringardner.io.filesource.FileSourceFactory;
+import us.bringardner.io.filesource.IConnectionPropertiesEditor;
 import us.bringardner.swing.PasswordPanel;
 import us.bringardner.swing.TextFieldPanel;
 
@@ -63,12 +67,16 @@ public class PropertyPanel extends JPanel implements IConnectionPropertiesEditor
 		for (Entry<Object, Object> e : properties.entrySet()) {
 			String nm = e.getKey().toString();
 			Component fld = map.get(nm);
-			if (fld instanceof JPasswordField) {
-				JPasswordField pw = (JPasswordField) fld;
-				properties.setProperty(nm, new String(pw.getPassword()));
+			//  The fields are the viewer's own components. This used to look only for JPasswordField
+			//  and JTextField, which they aren't, so edits were never read back.
+			if (fld instanceof PasswordPanel) {
+				properties.setProperty(nm, ((PasswordPanel) fld).getPassword());
+			} else if (fld instanceof TextFieldPanel) {
+				properties.setProperty(nm, ((TextFieldPanel) fld).getText());
+			} else if (fld instanceof JPasswordField) {
+				properties.setProperty(nm, new String(((JPasswordField) fld).getPassword()));
 			} else if (fld instanceof JTextField) {
-				JTextField txt = (JTextField) fld;
-				properties.setProperty(nm, txt.getText());
+				properties.setProperty(nm, ((JTextField) fld).getText());
 			}
 		}
 
@@ -103,7 +111,9 @@ public class PropertyPanel extends JPanel implements IConnectionPropertiesEditor
 
 			Component fld = new TextFieldPanel(displayName,val);
 
-			if( name.toLowerCase().contains("password")) {
+			//  Every secret the factory knows of (a key passphrase, a token ...), not only names with
+			//  "password" in them, as BjlFileSystem's PropertyPanel does
+			if( factory != null ? factory.isSecretProperty(name) : FileSourceFactory.looksLikeSecret(name)) {
 				fld = new PasswordPanel(val);
 				
 			}
