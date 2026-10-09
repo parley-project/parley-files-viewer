@@ -144,11 +144,11 @@ import javax.swing.tree.TreeSelectionModel;
 
 import us.bringardner.parley.core.SecureBaseObject;
 import us.bringardner.parley.files.FileSource;
-import us.bringardner.parley.files.FileSourceChooserDialog;
-import us.bringardner.parley.files.FactoryPropertiesDialog;
+import us.bringardner.parley.files.swing.FileSourceChooserDialog;
+import us.bringardner.parley.files.swing.FactoryPropertiesDialog;
 import us.bringardner.parley.files.FileSourceFactory;
-import us.bringardner.parley.files.ProgressMonitorProgress;
-import us.bringardner.parley.files.FileSourceTransferable;
+import us.bringardner.parley.files.swing.ProgressMonitorProgress;
+import us.bringardner.parley.files.swing.FileSourceTransferable;
 import us.bringardner.parley.files.fileproxy.FileProxy;
 import us.bringardner.parley.files.fileproxy.FileProxyFactory;
 import us.bringardner.parley.files.memory.MemoryFileSourceFactory;

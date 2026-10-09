@@ -47,7 +47,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
 import us.bringardner.parley.files.FileSource;
-import us.bringardner.parley.files.FileSourceChooserDialog;
+import us.bringardner.parley.files.swing.FileSourceChooserDialog;
 import us.bringardner.parley.files.FileSourceFilter;
 import us.bringardner.parley.files.viewer.IRegistry.CommandType;
 import us.bringardner.parley.files.viewer.IRegistry.RegData;

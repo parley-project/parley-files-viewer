@@ -19,7 +19,7 @@ import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 
 import us.bringardner.parley.files.FileSource;
-import us.bringardner.parley.files.FileSourceChooserDialog;
+import us.bringardner.parley.files.swing.FileSourceChooserDialog;
 
 public class RegistryImageFrame extends JFrame {
 
