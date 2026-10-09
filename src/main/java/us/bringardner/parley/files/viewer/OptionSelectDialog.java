@@ -23,7 +23,7 @@
  *
  * ~version~V000.01.40-V000.01.39-V000.01.27-V000.01.26-V000.01.V21_5-V000.01.21_3-V000.01.18-V000.01.17-V000.01.05-V000.01.00-
  */
-package us.bringardner.swing;
+package us.bringardner.parley.files.viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -49,12 +49,13 @@ import javax.swing.table.DefaultTableModel;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.FileSourceChooserDialog;
 import us.bringardner.parley.files.FileSourceFilter;
-import us.bringardner.parley.files.viewer.FileSourceViewerBase;
-import us.bringardner.parley.files.viewer.IRegistry;
 import us.bringardner.parley.files.viewer.IRegistry.CommandType;
 import us.bringardner.parley.files.viewer.IRegistry.RegData;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+
+import us.bringardner.swing.gradient.GradientButton;
+import us.bringardner.swing.gradient.GradientPanel;
 
 
 

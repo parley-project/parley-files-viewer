@@ -41,7 +41,7 @@ import us.bringardner.parley.files.sftp.SftpFileSourceFactory;
 import us.bringardner.parley.files.viewer.FileSourceViewer.CopyProgressListner;
 import us.bringardner.parley.files.viewer.IRegistry.CommandType;
 import us.bringardner.parley.files.viewer.IRegistry.RegData;
-import us.bringardner.swing.MessageDialog;
+import us.bringardner.swing.dialog.MessageDialog;
 
 /**
  * If the file is remote we'll download a copy and monitor

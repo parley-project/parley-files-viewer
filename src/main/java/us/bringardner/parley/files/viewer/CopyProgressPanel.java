@@ -1,4 +1,4 @@
-package us.bringardner.swing;
+package us.bringardner.parley.files.viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -27,9 +27,10 @@ import javax.swing.table.AbstractTableModel;
 
 import us.bringardner.parley.core.BaseThread;
 import us.bringardner.parley.files.FileSource;
-import us.bringardner.parley.files.viewer.FileSourceViewer;
-import us.bringardner.swing.MessageDialog.Response;
+import us.bringardner.swing.dialog.MessageDialog.Response;
 import us.bringardner.parley.io.IoUtils;
+
+import us.bringardner.swing.dialog.MessageDialog;
 
 public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyProgressListner {
 	private static int idTracker = 0;

@@ -158,12 +158,12 @@ import us.bringardner.parley.net.client.DynamicTrustManager;
 import us.bringardner.parley.net.client.VisualCertificateValidator;
 import us.bringardner.fsh.Console;
 
-import us.bringardner.swing.FontDialog;
-import us.bringardner.swing.MessageDialog;
-import us.bringardner.swing.MessageDialog.Response;
-import us.bringardner.swing.OptionSelectDialog;
-import us.bringardner.swing.ScrollBarUI;
-import us.bringardner.swing.SettingsDialog;
+import us.bringardner.swing.gradient.GradientColors;
+import us.bringardner.swing.dialog.FontDialog;
+import us.bringardner.swing.dialog.MessageDialog;
+import us.bringardner.swing.dialog.MessageDialog.Response;
+import us.bringardner.swing.ui.ScrollBarUI;
+import us.bringardner.swing.dialog.SettingsDialog;
 
 
 
@@ -177,9 +177,10 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	public static final String PREF_COLOR = "Color";
 
 	public static final String ICON_LOCATION = "/us/bringardner/parley/files/viewer/icons";
-	public static final Color GradiantPanelStartColor = new Color(242, 206, 113);
-	public static final Color GradiantPanelEndColor   = new Color(150, 123, 40);
-	public static final Color TRANSPARENT   = new Color(255, 255, 255,0);
+	// the same colors the swing-widgets gradient widgets use
+	public static final Color GradiantPanelStartColor = GradientColors.getStart();
+	public static final Color GradiantPanelEndColor   = GradientColors.getEnd();
+	public static final Color TRANSPARENT   = GradientColors.TRANSPARENT;
 
 
 	public static final String PREF_FONT_FAMILY = "FontFamily";
@@ -1154,7 +1155,7 @@ Tree.selectionForeground
 		defaults.put("Table.background", TRANSPARENT);				
 		defaults.put("Table.textBackground", TRANSPARENT);
 
-		//defaults.put("TableHeaderUI", BjlTableHeaderUI.class.getCanonicalName());
+		//defaults.put("TableHeaderUI", TableHeaderUI.class.getCanonicalName());
 		defaults.put("TableHeader.background", new ColorUIResource(GradiantPanelEndColor));		
 		defaults.put("TableHeader.foreground", new ColorUIResource(GradiantPanelEndColor));
 

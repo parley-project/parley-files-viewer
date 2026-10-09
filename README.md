@@ -9,7 +9,8 @@ Formerly `com.bringardner:bjl_file_system_viewer` (BjlFileSystemViewer), with pa
 
 - **Java 21** or later (the "Open terminal" action uses [fsh](https://github.com/tony-bringardner/fsh))
 - Built on parley-core, parley-io, parley-net, parley-files, parley-files-sftp, parley-files-jdbc
-  and [swing-widgets](https://github.com/tony-bringardner/swing-widgets)
+  and [swing-widgets](https://github.com/tony-bringardner/swing-widgets), which now holds the
+  gradient buttons, dialogs and fields that used to be the viewer's `us.bringardner.swing` package
 
 ## macOS native library
 

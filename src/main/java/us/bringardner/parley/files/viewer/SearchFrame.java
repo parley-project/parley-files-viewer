@@ -64,8 +64,8 @@ import us.bringardner.swing.datetime.DateTimeCombo;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.fileproxy.FileProxyFactory;
 import us.bringardner.parley.files.viewer.SearchRequest.Operator;
-import us.bringardner.swing.GradientButton;
-import us.bringardner.swing.GradientPanel;
+import us.bringardner.swing.gradient.GradientButton;
+import us.bringardner.swing.gradient.GradientPanel;
 
 public class SearchFrame extends JFrame {
 

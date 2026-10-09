@@ -39,7 +39,7 @@ import javax.swing.table.AbstractTableModel;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.viewer.IRegistry.CommandType;
 import us.bringardner.parley.files.viewer.IRegistry.RegData;
-import us.bringardner.swing.MessageDialog;
+import us.bringardner.swing.dialog.MessageDialog;
 
 public class FileTableModel extends AbstractTableModel {
 

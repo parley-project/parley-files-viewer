@@ -56,8 +56,7 @@ import javax.swing.SwingConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
-import us.bringardner.swing.CopyProgressPanel;
-import us.bringardner.swing.GradientPanel;
+import us.bringardner.swing.gradient.GradientPanel;
 
 
 
