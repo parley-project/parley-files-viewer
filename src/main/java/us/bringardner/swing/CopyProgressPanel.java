@@ -25,11 +25,11 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.AbstractTableModel;
 
-import us.bringardner.core.BaseThread;
-import us.bringardner.io.filesource.FileSource;
-import us.bringardner.io.filesource.viewer.FileSourceViewer;
+import us.bringardner.parley.core.BaseThread;
+import us.bringardner.parley.files.FileSource;
+import us.bringardner.parley.files.viewer.FileSourceViewer;
 import us.bringardner.swing.MessageDialog.Response;
-import us.bringardner.io.IoUtils;
+import us.bringardner.parley.io.IoUtils;
 
 public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyProgressListner {
 	private static int idTracker = 0;
@@ -323,7 +323,7 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 				actionExpandCollapse();
 			}
 		});
-		expandCollapseButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/io/filesource/viewer/icons/UpArrow20x20.png")));
+		expandCollapseButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/UpArrow20x20.png")));
 
 		JPanel panel = new JPanel();
 		controlPanel.add(panel, BorderLayout.CENTER);
@@ -349,7 +349,7 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 				actionCancel();
 			}
 		});
-		cancelButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/io/filesource/viewer/icons/Cancel30x30.png")));
+		cancelButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/Cancel30x30.png")));
 
 		hideButton = new JButton("");
 		hideButton.addActionListener(new ActionListener() {
@@ -360,7 +360,7 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 		hideButton.setVisible(false);
 		hideButton.setBorderPainted(false);
 		hideButton.setToolTipText("Close History");
-		hideButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/io/filesource/viewer/icons/eye_closed30x30.png")));
+		hideButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/eye_closed30x30.png")));
 		panel_1.add(hideButton);
 
 		JPanel topPanel = new JPanel();
@@ -401,7 +401,7 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 		});
 		cancelCurrentButton.setBorderPainted(false);
 		cancelCurrentButton.setToolTipText("Cancel current copy");
-		cancelCurrentButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/io/filesource/viewer/icons/Cancel30x30.png")));
+		cancelCurrentButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/Cancel30x30.png")));
 		cancelOnePanel.add(cancelCurrentButton);
 
 		clearButton = new JButton("");
@@ -413,7 +413,7 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 		clearButton.setVisible(false);
 		clearButton.setBorderPainted(false);
 		clearButton.setToolTipText("Clear History");
-		clearButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/io/filesource/viewer/icons/sweep_clear30x30.png")));
+		clearButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/sweep_clear30x30.png")));
 		cancelOnePanel.add(clearButton);
 
 		centerPanel = new JPanel();

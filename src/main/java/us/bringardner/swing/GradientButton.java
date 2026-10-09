@@ -44,7 +44,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.border.LineBorder;
 
-import us.bringardner.io.filesource.viewer.FileSourceViewer;
+import us.bringardner.parley.files.viewer.FileSourceViewer;
 
 public class GradientButton extends GradientPanel  {
 

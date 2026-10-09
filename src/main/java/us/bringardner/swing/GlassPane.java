@@ -14,7 +14,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
-import us.bringardner.io.filesource.viewer.FileSourceViewer;
+import us.bringardner.parley.files.viewer.FileSourceViewer;
 
 public class GlassPane extends JComponent implements MouseListener {
 	private static final long serialVersionUID = 1L;

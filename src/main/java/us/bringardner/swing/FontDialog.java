@@ -55,7 +55,7 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.plaf.ColorUIResource;
 
-import us.bringardner.io.filesource.viewer.FileSourceViewer;
+import us.bringardner.parley.files.viewer.FileSourceViewer;
 
 public class FontDialog extends JDialog {
 

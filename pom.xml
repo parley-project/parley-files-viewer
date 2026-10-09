@@ -2,220 +2,137 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>bjl_file_system_viewer</artifactId>
-	<groupId>com.bringardner</groupId>
-	<version>1.0.2-SNAPSHOT</version>
-	<name>BJLFileSystemViewer</name>
-	<description>This project defines an Interface of a "FileSystem" that looks
-		very much like a Java File but enables multiple implementations to
-		coexists (i,e, FTP, SFTP, ...) . </description>
-	<url>http://bringardner.us/BJL/${project.artifactId}</url>
+
+	<!-- License, developer, SCM, URL, GitHub Packages and the Maven Central release profile
+	     all come from parley-parent. -->
+	<parent>
+		<groupId>us.bringardner.parley</groupId>
+		<artifactId>parley-parent</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../parley-parent/pom.xml</relativePath>
+	</parent>
+
+	<artifactId>parley-files-viewer</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>Parley Files Viewer</name>
+	<description>A Swing application for browsing, copying, searching and editing files on any
+		parley-files file system (local, memory, FTP, SFTP, JDBC). Formerly
+		com.bringardner:bjl_file_system_viewer (BjlFileSystemViewer).</description>
+
+	<properties>
+		<!-- Written to the jar manifest as Automatic-Module-Name -->
+		<parley.moduleName>us.bringardner.parley.files.viewer</parley.moduleName>
+		<!-- 21: fsh (the "Open terminal" action) is built for Java 21 -->
+		<maven.compiler.release>21</maven.compiler.release>
+		<flatlaf.version>3.5.4</flatlaf.version>
+	</properties>
 
 	<build>
-		<!-- <sourceDirectory>src</sourceDirectory> -->
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.3</version>
-					<configuration>
-						<!-- 21: BjlShell (the terminal) is built for Java 21; Eclipse already used JavaSE-21 -->
-						<source>21</source>
-						<target>21</target>
-					</configuration>
-				</plugin>
-
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-source-plugin</artifactId>
-					<version>3.1.0</version>
-					<executions>
-						<execution>
-							<id>attach-sources</id>
-							<goals>
-								<goal>jar</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
-					<artifactId>maven-deploy-plugin</artifactId>
-					<version>2.8.2</version>
-				</plugin>
-				<plugin>
-					<groupId>com.github.github</groupId>
-					<artifactId>site-maven-plugin</artifactId>
-					<version>0.12</version>
-					<configuration>
-						<message>Maven artifacts for ${project.version}</message>
-						<noJekyll>true</noJekyll>
-						<outputDirectory>${project.build.directory}</outputDirectory>
-						<branch>refs/heads/${branch-name}</branch>
-						<includes>
-							<include>**/*</include>
-						</includes>
-						<merge>true</merge>
-						<repositoryName>BjlFileSystemViewer</repositoryName>
-						<repositoryOwner>tony-bringardner</repositoryOwner>
-						<server>github</server>
-					</configuration>
-					<executions>
-						<execution>
-							<goals>
-								<goal>site</goal>
-							</goals>
-							<phase>deploy</phase>
-						</execution>
-					</executions>
-				</plugin>
-
-				<plugin>
-					<groupId>org.apache.maven.plugins</groupId>
-					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.5.2</version>
-					<configuration>
-						<test><!-- your test suite class name should be here -->
-						</test>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
+		<plugins>
+			<!-- Attaches the -sources.jar. The version comes from parley-parent; package (not deploy)
+			     so the source jar is attached BEFORE the deploy plugin runs. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<phase>package</phase>
+						<goals>
+							<goal>jar-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
 	</build>
 
-	<distributionManagement>
-		<repository>
-			<id>github</id>
-			<name>tony-bringardner</name>
-			<url>
-				https://maven.pkg.github.com/tony-bringardner/BjlFileSystemViewer</url>
-		</repository>
-
-	</distributionManagement>
-
-
-	<!-- bjl_core (and the other BJL packages) are published to GitHub Packages; the id matches the
-	     <server> with the GitHub credentials in ~/.m2/settings.xml. -->
-	<repositories>
-		<repository>
-			<id>github</id>
-			<url>https://maven.pkg.github.com/tony-bringardner/BjlCore</url>
-		</repository>
-	</repositories>
-
 	<dependencies>
-	<dependency>
-			<groupId>us.bringardner</groupId>
-			<artifactId>bjl_core</artifactId>
-			<version>1.3.1-SNAPSHOT</version>
-		</dependency>
-
 		<dependency>
-			<groupId>us.bringardner</groupId>
-			<artifactId>bjl_io</artifactId>
-			<version>1.1.1-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>us.bringardner</groupId>
-			<artifactId>bjl_net_framework</artifactId>
-			<version>1.1.0-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
-			<groupId>us.bringardner</groupId>
-			<artifactId>bjl_file_system</artifactId>
-			<version>1.0.2-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>us.bringardner</groupId>
-			<artifactId>bjl_file_system_sftp</artifactId>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-core</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
-		</dependency>	
-		<dependency>
-			<groupId>com.jcraft</groupId>
-			<artifactId>jsch</artifactId>
-			<version>0.1.54</version>
 		</dependency>
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-io</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<!-- DynamicTrustManager and VisualCertificateValidator; was bjl_net_framework -->
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-net</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-files</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<!-- brings its own maintained JSch (same com.jcraft.jsch packages), so the old
+		     com.jcraft:jsch 0.1.54 is no longer listed here -->
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-files-sftp</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-files-jdbc</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<!-- DateTimeCombo in the search window; was bjl_core's us.bringardner.core.swing -->
+		<dependency>
+			<groupId>us.bringardner</groupId>
+			<artifactId>swing-widgets</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<!-- The "Open terminal" action uses fsh's Console; was bjl_shell (BjlShell) -->
+		<dependency>
+			<groupId>us.bringardner</groupId>
+			<artifactId>fsh</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+
 		<dependency>
 			<groupId>com.formdev</groupId>
 			<artifactId>flatlaf</artifactId>
-			<version>3.5.4</version>
+			<version>${flatlaf.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.formdev</groupId>
 			<artifactId>flatlaf-intellij-themes</artifactId>
-			<version>3.5.4</version>
+			<version>${flatlaf.version}</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.miglayout/miglayout-swing -->
-<dependency>
-    <groupId>com.miglayout</groupId>
-    <artifactId>miglayout-swing</artifactId>
-    <version>11.4.2</version>
-</dependency>
-
-<dependency>
-  <groupId>com.formdev</groupId>
-  <artifactId>flatlaf-fonts-inter</artifactId>
-  <version>4.0</version>
-</dependency>
-
-<dependency>
-  <groupId>com.formdev</groupId>
-  <artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
-  <version>2.304</version>
-</dependency>
-
-<dependency>
-  <groupId>com.formdev</groupId>
-  <artifactId>flatlaf-fonts-roboto</artifactId>
-  <version>2.137</version>
-</dependency>
-
-<dependency>
-  <groupId>com.formdev</groupId>
-  <artifactId>flatlaf-fonts-roboto-mono</artifactId>
-  <version>3.000</version>
-</dependency>
-
-
 		<dependency>
 			<groupId>com.formdev</groupId>
 			<artifactId>flatlaf-extras</artifactId>
-			<version>3.5.4</version>
+			<version>${flatlaf.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.sshd</groupId>
-			<artifactId>apache-sshd</artifactId>
-			<version>0.12.0</version>
-			<type>zip</type>
-			<classifier>src</classifier>
-			<scope>test</scope>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf-fonts-inter</artifactId>
+			<version>4.0</version>
 		</dependency>
 		<dependency>
-			<groupId>net.sf.jfcunit</groupId>
-			<artifactId>jfcunit</artifactId>
-			<version>2.08</version>
-			<scope>test</scope>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
+			<version>2.304</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.hsqldb/hsqldb -->
 		<dependency>
-			<groupId>org.hsqldb</groupId>
-			<artifactId>hsqldb</artifactId>
-			<version>2.7.3</version>
-			<scope>test</scope>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf-fonts-roboto</artifactId>
+			<version>2.137</version>
 		</dependency>
-
 		<dependency>
-			<groupId>us.bringardner</groupId>
-			<artifactId>bjl_file_system_jdbc</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf-fonts-roboto-mono</artifactId>
+			<version>3.000</version>
 		</dependency>
-		<!-- The "Open terminal" action uses BjlShell's Console; Eclipse linked the
-		     BjlShell project directly, so a Maven build couldn't find it (BJL-27) -->
 		<dependency>
-			<groupId>us.bringardner</groupId>
-			<artifactId>bjl_shell</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<groupId>com.miglayout</groupId>
+			<artifactId>miglayout-swing</artifactId>
+			<version>11.4.2</version>
 		</dependency>
 
 		<dependency>

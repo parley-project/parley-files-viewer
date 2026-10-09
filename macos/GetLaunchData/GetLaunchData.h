@@ -12,7 +12,7 @@ extern "C" {
  * Method:    getLaunchData
  * Signature: (Ljava/lang/String;)Ljava/lang/String;
  */
-JNIEXPORT jstring JNICALL Java_us_bringardner_io_filesource_viewer_registry_MacRegistry_getLaunchData(JNIEnv *env, jobject obj, jstring string);
+JNIEXPORT jstring JNICALL Java_us_bringardner_parley_files_viewer_registry_MacRegistry_getLaunchData(JNIEnv *env, jobject obj, jstring string);
 
 #ifdef __cplusplus
 }

@@ -18,7 +18,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
-import us.bringardner.io.filesource.viewer.FileSourceViewer;
+import us.bringardner.parley.files.viewer.FileSourceViewer;
 import javax.swing.SwingConstants;
 
 public class SettingsDialog extends JDialog {

@@ -46,13 +46,13 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
-import us.bringardner.io.filesource.FileSource;
-import us.bringardner.io.filesource.FileSourceChooserDialog;
-import us.bringardner.io.filesource.FileSourceFilter;
-import us.bringardner.io.filesource.viewer.FileSourceViewerBase;
-import us.bringardner.io.filesource.viewer.IRegistry;
-import us.bringardner.io.filesource.viewer.IRegistry.CommandType;
-import us.bringardner.io.filesource.viewer.IRegistry.RegData;
+import us.bringardner.parley.files.FileSource;
+import us.bringardner.parley.files.FileSourceChooserDialog;
+import us.bringardner.parley.files.FileSourceFilter;
+import us.bringardner.parley.files.viewer.FileSourceViewerBase;
+import us.bringardner.parley.files.viewer.IRegistry;
+import us.bringardner.parley.files.viewer.IRegistry.CommandType;
+import us.bringardner.parley.files.viewer.IRegistry.RegData;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
@@ -63,9 +63,9 @@ public class OptionSelectDialog extends JDialog {
 
 	public enum Response {Yes,No}
 
-	public static final ImageIcon warningIcon = new ImageIcon(OptionSelectDialog.class.getResource("/us/bringardner/io/filesource/viewer/icons/Warning100x100.png"));
-	public static final ImageIcon ErrorIcon   = new ImageIcon(OptionSelectDialog.class.getResource("/us/bringardner/io/filesource/viewer/icons/Error100x100.png"));
-	public static final ImageIcon MessageIcon   = new ImageIcon(OptionSelectDialog.class.getResource("/us/bringardner/io/filesource/viewer/icons/Globe100x100.png"));
+	public static final ImageIcon warningIcon = new ImageIcon(OptionSelectDialog.class.getResource("/us/bringardner/parley/files/viewer/icons/Warning100x100.png"));
+	public static final ImageIcon ErrorIcon   = new ImageIcon(OptionSelectDialog.class.getResource("/us/bringardner/parley/files/viewer/icons/Error100x100.png"));
+	public static final ImageIcon MessageIcon   = new ImageIcon(OptionSelectDialog.class.getResource("/us/bringardner/parley/files/viewer/icons/Globe100x100.png"));
 
 
 

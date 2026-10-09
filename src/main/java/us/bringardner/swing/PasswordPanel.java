@@ -82,7 +82,7 @@ public class PasswordPanel extends JPanel {
 				actionHidePassword();
 			}
 		});
-		hideLabel.setIcon(new ImageIcon(PasswordPanel.class.getResource("/us/bringardner/io/filesource/viewer/icons/OpenEyeBw_40_17.png")));
+		hideLabel.setIcon(new ImageIcon(PasswordPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/OpenEyeBw_40_17.png")));
 		layeredPane.setLayer(hideLabel, 0);
 		hideLabel.setBounds(259, 9, 50, 16);
 		layeredPane.add(hideLabel);
@@ -94,7 +94,7 @@ public class PasswordPanel extends JPanel {
 				actionShowPassword();
 			}
 		});
-		showLabel.setIcon(new ImageIcon(PasswordPanel.class.getResource("/us/bringardner/io/filesource/viewer/icons/ClosedEyeBw_40_17.png")));
+		showLabel.setIcon(new ImageIcon(PasswordPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/ClosedEyeBw_40_17.png")));
 		layeredPane.setLayer(showLabel, 2);
 		showLabel.setBounds(259, 9, 49, 16);
 		layeredPane.add(showLabel);

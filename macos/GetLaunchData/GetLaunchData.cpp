@@ -51,7 +51,7 @@ std::string getIconPathFromBundleURL(CFURLRef bundleURL) {
     return std::string(resourcesPath) + "/" + iconFile;
 }
 
-JNIEXPORT jstring JNICALL Java_us_bringardner_io_filesource_viewer_registry_MacRegistry_getLaunchData(JNIEnv *env, jobject obj, jstring ext){
+JNIEXPORT jstring JNICALL Java_us_bringardner_parley_files_viewer_registry_MacRegistry_getLaunchData(JNIEnv *env, jobject obj, jstring ext){
     CFStringRef        cfhandler = NULL;
     CFArrayRef        cfhandlers = NULL;
     

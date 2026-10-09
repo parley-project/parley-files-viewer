@@ -51,9 +51,9 @@ public class MessageDialog extends JDialog {
 
 	public enum Response {Yes,No}
 
-	public static final ImageIcon warningIcon = new ImageIcon(MessageDialog.class.getResource("/us/bringardner/io/filesource/viewer/icons/Warning100x100.png"));
-	public static final ImageIcon ErrorIcon   = new ImageIcon(MessageDialog.class.getResource("/us/bringardner/io/filesource/viewer/icons/Error100x100.png"));
-	public static final ImageIcon MessageIcon   = new ImageIcon(MessageDialog.class.getResource("/us/bringardner/io/filesource/viewer/icons/Globe100x100.png"));
+	public static final ImageIcon warningIcon = new ImageIcon(MessageDialog.class.getResource("/us/bringardner/parley/files/viewer/icons/Warning100x100.png"));
+	public static final ImageIcon ErrorIcon   = new ImageIcon(MessageDialog.class.getResource("/us/bringardner/parley/files/viewer/icons/Error100x100.png"));
+	public static final ImageIcon MessageIcon   = new ImageIcon(MessageDialog.class.getResource("/us/bringardner/parley/files/viewer/icons/Globe100x100.png"));
 
 
 
