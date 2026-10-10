@@ -22,8 +22,6 @@
 	<properties>
 		<!-- Written to the jar manifest as Automatic-Module-Name -->
 		<parley.moduleName>us.bringardner.parley.files.viewer</parley.moduleName>
-		<!-- 21: fsh (the "Open terminal" action) is built for Java 21 -->
-		<maven.compiler.release>21</maven.compiler.release>
 		<flatlaf.version>3.5.4</flatlaf.version>
 	</properties>
 
