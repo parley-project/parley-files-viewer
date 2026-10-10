@@ -92,6 +92,25 @@ public class RootFile implements FileSource {
 		return getName();
 	}
 
+	/** The root of one file system is one thing: equal when it is the root of the same file system. */
+	@Override
+	public boolean equals(Object obj) {
+		if( this == obj ) {
+			return true;
+		}
+		if( !(obj instanceof RootFile) ) {
+			return false;
+		}
+		RootFile r = (RootFile) obj;
+		return factory == null ? r.factory == null : r.factory != null && factory.isSameFileSystem(r.factory);
+	}
+
+	@Override
+	public int hashCode() {
+		// the file systems that are the same share a type, so this can't differ for equal ones
+		return factory == null ? 0 : factory.getTypeId().hashCode();
+	}
+
 	
 
 	@Override
@@ -140,8 +159,14 @@ public class RootFile implements FileSource {
 	}
 
 	@Override
+	/** Orders by path, then by kind, like the other FileSources (it used to say "equal" to everything). */
 	public int compareTo(Object o) {
-		return 0;
+		String mine = getAbsolutePath();
+		if( o instanceof FileSource ) {
+			int ret = mine.compareTo(((FileSource) o).getAbsolutePath());
+			return ret != 0 ? ret : getClass().getName().compareTo(o.getClass().getName());
+		}
+		return mine.compareTo(String.valueOf(o));
 	}
 
 	@Override
