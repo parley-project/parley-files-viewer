@@ -38,9 +38,6 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 		return ++idTracker;
 	}
 
-	/** What each read and write moves (CopyThread uses 100 KB); at 1 KB a large copy was mostly call overhead. */
-	private int bufferSize=64*1024;
-
 	private  class CopyThread extends BaseThread {
 
 
@@ -55,15 +52,18 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 			InputStream in = null;
 			OutputStream out = null;
 
-			byte [] buffer = new byte[bufferSize];
+			byte [] buffer;
 			try {
 
 				FileSource target = transaction.dest;
 				if( transaction.dest.isDirectory()) {
 					target = transaction.dest.getChild(transaction.source.getName());
 				}
-				in = transaction.source.getInputStream();
-				out = target.getOutputStream();
+				// what suits the two ends, and streams opened with it
+				int block = CopyBlock.sizeFor(transaction.source, target);
+				buffer = new byte[block];
+				in = transaction.source.getInputStream(CopyBlock.optionsFor(block));
+				out = target.getOutputStream(false, CopyBlock.optionsFor(block));
 				long bytesCopied = 0;
 				copyStarted(transaction.source.length());
 				while(!stopping && running ) {

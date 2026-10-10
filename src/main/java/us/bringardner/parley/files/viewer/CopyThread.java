@@ -146,7 +146,6 @@ public class CopyThread extends BaseThread {
 	private FileSource source;
 	private FileSource dest;
 	private FileSourceViewer.CopyProgressListner listener;
-	private int bufferSize=1024*100;
 
 	
 	public CopyThread(FileSource source, FileSource dest, FileSourceViewer.CopyProgressListner listener) {
@@ -168,15 +167,18 @@ public class CopyThread extends BaseThread {
 		InputStream in = null;
 		OutputStream out = null;
 		
-		byte [] buffer = new byte[bufferSize];
+		byte [] buffer;
 		try {
 			
 			FileSource target = dest;
 			if( dest.isDirectory()) {
 				target = dest.getChild(source.getName());
 			}
-			in = source.getInputStream();
-			out = target.getOutputStream();
+			// what suits the two ends, and streams opened with it
+			int block = CopyBlock.sizeFor(source, target);
+			buffer = new byte[block];
+			in = source.getInputStream(CopyBlock.optionsFor(block));
+			out = target.getOutputStream(false, CopyBlock.optionsFor(block));
 			long bytesCopied = 0;
 			
 			if( listener != null ) {

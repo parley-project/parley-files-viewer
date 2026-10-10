@@ -675,10 +675,8 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 
 				}
 			} else {
-				// closed even if the copy fails
-				try(InputStream in = file.getInputStream(); OutputStream out = newFile.getOutputStream()) {
-					in.transferTo(out);
-				}
+				// both streams closed even if the copy fails, moving what suits the two ends
+				CopyBlock.copy(file, newFile);
 			}
 
 		}
