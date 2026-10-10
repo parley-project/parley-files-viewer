@@ -38,7 +38,8 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 		return ++idTracker;
 	}
 
-	private int bufferSize=1024;
+	/** What each read and write moves (CopyThread uses 100 KB); at 1 KB a large copy was mostly call overhead. */
+	private int bufferSize=64*1024;
 
 	private  class CopyThread extends BaseThread {
 
@@ -263,7 +264,15 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 						}
 					}
 
-					Thread.sleep(100);
+					// A fixed 100 ms sleep here cost every file at least that long. While a copy
+					// runs, wake the moment it ends; with files waiting and nothing running,
+					// go straight on to the next one. Only an idle monitor needs to poll.
+					CopyThread active = copyThread;
+					if( active != null && active.isRunning() ) {
+						active.join(100);
+					} else if( waitingTransaction.isEmpty() ) {
+						Thread.sleep(100);
+					}
 				} catch (Throwable e) {					
 				}
 
@@ -490,6 +499,10 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 		}
 	}
 
+	/** The latest count from the copy thread, and whether an event to show it is already queued. */
+	private volatile long latestBytesCopied;
+	private final java.util.concurrent.atomic.AtomicBoolean progressQueued = new java.util.concurrent.atomic.AtomicBoolean();
+
 	@Override
 	public void updateProgress(long bytesCopied) {
 		if( SwingUtilities.isEventDispatchThread()) {
@@ -499,7 +512,15 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 				currentTransaction.bytesCopied = bytesCopied;
 			}
 		} else {
-			SwingUtilities.invokeLater(()->updateProgress(bytesCopied));
+			// One queued event at a time, showing the latest count: a copy used to queue
+			// an event for every chunk, far more than the screen can draw.
+			latestBytesCopied = bytesCopied;
+			if( progressQueued.compareAndSet(false, true) ) {
+				SwingUtilities.invokeLater(()->{
+					progressQueued.set(false);
+					updateProgress(latestBytesCopied);
+				});
+			}
 		}
 
 	}
