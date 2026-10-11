@@ -32,6 +32,7 @@ import java.util.Properties;
 
 import us.bringardner.parley.core.BaseThread;
 import us.bringardner.parley.files.FileSource;
+import us.bringardner.parley.files.FileSourceCopy;
 import us.bringardner.parley.files.FileSourceFactory;
 import us.bringardner.parley.files.fileproxy.FileProxy;
 import us.bringardner.parley.files.sftp.SftpFileSourceFactory;
@@ -175,10 +176,10 @@ public class CopyThread extends BaseThread {
 				target = dest.getChild(source.getName());
 			}
 			// what suits the two ends, and streams opened with it
-			int block = CopyBlock.sizeFor(source, target);
+			int block = FileSourceCopy.blockSizeFor(source, target);
 			buffer = new byte[block];
-			in = source.getInputStream(CopyBlock.optionsFor(block));
-			out = target.getOutputStream(false, CopyBlock.optionsFor(block));
+			in = source.getInputStream(FileSourceCopy.optionsFor(block));
+			out = target.getOutputStream(false, FileSourceCopy.optionsFor(block));
 			long bytesCopied = 0;
 			
 			if( listener != null ) {

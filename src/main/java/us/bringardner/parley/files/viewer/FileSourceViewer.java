@@ -144,6 +144,7 @@ import javax.swing.tree.TreeSelectionModel;
 
 import us.bringardner.parley.core.SecureBaseObject;
 import us.bringardner.parley.files.FileSource;
+import us.bringardner.parley.files.FileSourceCopy;
 import us.bringardner.parley.files.swing.FileSourceChooserDialog;
 import us.bringardner.parley.files.swing.FactoryPropertiesDialog;
 import us.bringardner.parley.files.FileSourceFactory;
@@ -676,7 +677,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 				}
 			} else {
 				// both streams closed even if the copy fails, moving what suits the two ends
-				CopyBlock.copy(file, newFile);
+				FileSourceCopy.copy(file, newFile);
 			}
 
 		}

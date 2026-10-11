@@ -27,6 +27,7 @@ import javax.swing.table.AbstractTableModel;
 
 import us.bringardner.parley.core.BaseThread;
 import us.bringardner.parley.files.FileSource;
+import us.bringardner.parley.files.FileSourceCopy;
 import us.bringardner.swing.dialog.MessageDialog.Response;
 import us.bringardner.parley.io.IoUtils;
 
@@ -60,10 +61,10 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 					target = transaction.dest.getChild(transaction.source.getName());
 				}
 				// what suits the two ends, and streams opened with it
-				int block = CopyBlock.sizeFor(transaction.source, target);
+				int block = FileSourceCopy.blockSizeFor(transaction.source, target);
 				buffer = new byte[block];
-				in = transaction.source.getInputStream(CopyBlock.optionsFor(block));
-				out = target.getOutputStream(false, CopyBlock.optionsFor(block));
+				in = transaction.source.getInputStream(FileSourceCopy.optionsFor(block));
+				out = target.getOutputStream(false, FileSourceCopy.optionsFor(block));
 				long bytesCopied = 0;
 				copyStarted(transaction.source.length());
 				while(!stopping && running ) {
