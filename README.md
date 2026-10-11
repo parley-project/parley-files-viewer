@@ -13,12 +13,24 @@ Formerly `com.bringardner:bjl_file_system_viewer` (BjlFileSystemViewer), with pa
   and [swing-widgets](https://github.com/tony-bringardner/swing-widgets), which now holds the
   gradient buttons, dialogs and fields that used to be the viewer's `us.bringardner.swing` package
 
-## macOS native library
+## Opening files with other applications (macOS)
 
-`macos/libGetLaunchData.dylib` (source in `macos/GetLaunchData`) finds the applications that can
-open a file type. Start the viewer with `-Djava.library.path=<path to macos>` so it can be loaded.
-Its JNI function is named after `us.bringardner.parley.files.viewer.registry.MacRegistry`, so the
-library must be rebuilt if that class moves.
+The list of applications that can open a file comes from Launch Services, through
+[JNA](https://github.com/java-native-access/jna) (`registry.LaunchServices`): there is no native
+library to build or to put on `java.library.path`, and nothing macOS-specific to ship (JNA is
+only used on a Mac).
+
+- **The file itself is asked about** where it exists, as Finder's *Open With* does, so a file
+  with no extension and a package (`.photoslibrary`, `.app`) get the applications Finder would
+  list. A path that does not exist is asked about by its extension.
+- **The default application is first**, and the list can be limited to the viewer or the editor
+  role.
+- **An application installed more than once is listed once**, as its best copy: the one Launch
+  Services opens the file with, else the newest version, else the one in the better place
+  (`/Applications`, then `~/Applications`, then `/System/Applications`, then elsewhere, then the
+  shallower path). The other copies are in its `getAlternates()`.
+- What Launch Services lists are the applications that **declare** they open that kind of file;
+  it cannot know that one is good at it.
 
 ## Building
 

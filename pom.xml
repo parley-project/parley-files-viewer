@@ -23,6 +23,7 @@
 		<!-- Written to the jar manifest as Automatic-Module-Name -->
 		<parley.moduleName>us.bringardner.parley.files.viewer</parley.moduleName>
 		<flatlaf.version>3.5.4</flatlaf.version>
+		<jna.version>5.19.1</jna.version>
 	</properties>
 
 	<build>
@@ -137,6 +138,14 @@
 			<groupId>com.miglayout</groupId>
 			<artifactId>miglayout-swing</artifactId>
 			<version>11.4.2</version>
+		</dependency>
+
+		<!-- macOS only, at run time: the applications that handle a file (registry.LaunchServices),
+		     through Core Foundation and Launch Services. Replaces a JNI library built with Xcode. -->
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna</artifactId>
+			<version>${jna.version}</version>
 		</dependency>
 
 		<dependency>

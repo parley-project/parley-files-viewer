@@ -23,11 +23,11 @@ import javax.swing.ImageIcon;
 
 import us.bringardner.parley.files.viewer.IRegistry;
 
+/**
+ * The applications Launch Services lists for a file (see {@link LaunchServices}): through JNA,
+ * so there is no library to build or to find on java.library.path.
+ */
 public class MacRegistry implements IRegistry {
-	private native String getLaunchData(String ext);
-	static {
-		System.loadLibrary("GetLaunchData");        
-	}
 
 	private class RegDataImpl extends IRegistry.RegData {
 
@@ -87,8 +87,17 @@ public class MacRegistry implements IRegistry {
 		}
 
 	}
-	private static MacRegistry singleton = new MacRegistry();
-	private static Map<String,UtiInstance> map = new TreeMap<>();
+	/** answers by path and role (a file's own type, so not by extension): the last 512 */
+	private static final int CACHE_SIZE = 512;
+	private static final Map<String,UtiInstance> map = java.util.Collections.synchronizedMap(
+			new java.util.LinkedHashMap<String,UtiInstance>(64, 0.75f, true) {
+				private static final long serialVersionUID = 1L;
+
+				@Override
+				protected boolean removeEldestEntry(Map.Entry<String,UtiInstance> eldest) {
+					return size() > CACHE_SIZE;
+				}
+			});
 
 	public static ImageIcon resize(ImageIcon icon, int newW, int newH) {
 
@@ -147,10 +156,27 @@ public class MacRegistry implements IRegistry {
 		String iconPath;
 
 
+		/** the other installed copies of this application (LaunchServices.dedupe), best first */
+		List<App> alternates = new ArrayList<>();
+
 		public App(String[] parts) {
 			name = parts[0];
 			path = parts[1];
 			iconPath = parts[2];
+		}
+
+		App(LaunchServices.App app) {
+			name = app.name;
+			path = app.path;
+			iconPath = app.iconPath;
+			for(LaunchServices.App other : app.alternates) {
+				alternates.add(new App(other));
+			}
+		}
+
+		/** the other installed copies of this application, best first (empty: there is one) */
+		public List<App> getAlternates() {
+			return alternates;
 		}
 
 		public List<ImageIcon> getIcons() throws IOException {
@@ -233,40 +259,47 @@ public class MacRegistry implements IRegistry {
 		}
 	}
 
-	public static UtiInstance getInstance(String extention,IRegistry.CommandType type) {
-		int i = extention.lastIndexOf('.');
-		if( i>=0 ) {
-			extention = extention.substring(i+1);
+	private static LaunchServices.Role role(IRegistry.CommandType type) {
+		switch (type) {
+		case Viewer: return LaunchServices.Role.VIEWER;
+		case Editor: return LaunchServices.Role.EDITOR;
+		case None: return LaunchServices.Role.NONE;
+		default: return LaunchServices.Role.ALL;
 		}
+	}
 
-		String id = extention.trim() +","+type;
-
+	/**
+	 * The applications that handle a file, the default first: Launch Services is asked about the
+	 * file itself where it exists (so a file with no extension and a package are answered as
+	 * Finder answers them), and about its extension where it does not. An application installed
+	 * more than once is listed once, as its best copy, with the others in its alternates.
+	 *
+	 * @param path a file's path, or just its name or extension (txt, .txt, x.txt)
+	 * @return null if Launch Services is not available
+	 */
+	public static UtiInstance getInstance(String path, IRegistry.CommandType type) {
+		if( !LaunchServices.isAvailable() ) {
+			return null;
+		}
+		String id = path.trim()+","+type;
 		UtiInstance ret = map.get(id);
 		if( ret == null ) {
-			String response = singleton.getLaunchData(id);
-			if( response != null ) {
-				response = response.trim();
-				if( response.startsWith("UTI for") 
-						&& 
-						response.endsWith("errors=0")) {
-					String [] lines = response.split("\n");
-					String uti = lines[0].substring(lines[0].indexOf('='));
-					List<App> apps = new ArrayList<>();
-					for (int idx = 1; idx < lines.length-1; idx++) {
-						String [] parts = lines[idx].split("[,]");
-						if( parts.length == 3) {
-							if( !parts[0].equals("System Information")) {
-								///Applications/Xcode.app/Contents/Applications/Instruments.app
-								if( parts[1].indexOf(".app") == parts[1].lastIndexOf(".app")) {
-									apps.add(new App(parts));
-								}							
-							}
-						}
-					}
-					ret = new UtiInstance(id,uti,apps);
-					map.put(id, ret);
+			// (a path that is not there is asked about by its extension: .txt, txt and x.txt are one)
+			LaunchServices.Result found = LaunchServices.dedupe(LaunchServices.handlersForPath(path.trim(), role(type)));
+			List<App> apps = new ArrayList<>();
+			for(LaunchServices.App app : found.apps) {
+				// (a claim, not a use: it is a poor viewer of anything; and an application inside
+				// another, such as Xcode's Instruments)
+				if( app.name.equals("System Information") ) {
+					continue;
 				}
+				if( app.path.indexOf(".app") != app.path.lastIndexOf(".app") ) {
+					continue;
+				}
+				apps.add(new App(app));
 			}
+			ret = new UtiInstance(id, found.uti, apps);
+			map.put(id, ret);
 		}
 
 		return ret;
@@ -275,7 +308,6 @@ public class MacRegistry implements IRegistry {
 
 
 	public static void main(String[] args) throws IOException {
-		//System.out.println(new MacGetLaunchData().getLaunchData("bash,Editor"));
 
 		IRegistry.CommandType type = CommandType.Any;
 
