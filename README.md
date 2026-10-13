@@ -2,7 +2,14 @@
 
 A Swing application for browsing, copying, searching and editing files on any
 [parley-files](https://github.com/tony-bringardner/parley-files) file system: local, memory, FTP,
-SFTP and JDBC. Part of **Parley**, formerly the Bringardner Java Library.
+SFTP and JDBC.
+
+**An example of what Parley can help you build.** The viewer is an application, not part of the
+Parley library: it uses the library the same way your own application would, so it is not in
+[parley-bom](https://github.com/tony-bringardner/parley-bom). Its window and Dock icons (the Parley tower with a folder badge) come from
+[parley-brand](https://github.com/tony-bringardner/parley-brand). Other examples are
+[fsh](https://github.com/tony-bringardner/fsh), a shell for any parley-files file system, and
+[fsh-ide](https://github.com/tony-bringardner/fsh-ide), an IDE for fsh scripts.
 
 Formerly `com.bringardner:bjl_file_system_viewer` (BjlFileSystemViewer), with packages under
 `us.bringardner.io.filesource.viewer`; they are now `us.bringardner.parley.files.viewer`.

@@ -77,7 +77,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -142,6 +141,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import us.bringardner.parley.brand.ParleyBrand;
 import us.bringardner.parley.core.SecureBaseObject;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.FileSourceCopy;
@@ -1217,9 +1217,8 @@ Tree.selectionForeground
 			}
 			try {
 				final Taskbar taskbar = Taskbar.getTaskbar();
-				final Toolkit defaultToolkit = Toolkit.getDefaultToolkit();
-				final URL imageResource = FileSourceViewer.class.getResource(ICON_LOCATION+"/logo_128.png");
-				final Image image = defaultToolkit.getImage(imageResource);
+				// The Dock / taskbar shows the app icon large, so use the biggest one
+				final Image image = ParleyBrand.icon(512, "files");
 
 				try {
 					taskbar.setIconImage(image);
@@ -1705,8 +1704,8 @@ Tree.selectionForeground
 			});
 		}
 
-		Image icon = new ImageIcon(getClass().getResource(ICON_LOCATION+"/folder.png")).getImage();
-		frame.setIconImage(icon);
+		// The Parley app icon with the folder badge, in every size; the OS picks the one each place needs
+		frame.setIconImages(ParleyBrand.appIcons("files"));
 
 		frame.setLocationRelativeTo(null);
 		popup = new JPopupMenu("Options");

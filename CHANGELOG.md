@@ -16,6 +16,10 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
 
 ### Changed (no code change needed)
 
+- The window and Dock icons are the Parley app icon with a folder badge, from
+  [parley-brand](https://github.com/tony-bringardner/parley-brand), in every size from 16 to 512 px.
+- The viewer is an example application built on Parley, not part of the library, so it is no longer
+  listed in parley-bom.
 - "Open terminal" uses [fsh](https://github.com/tony-bringardner/fsh).
 - On macOS the applications that can open a file come from Launch Services through JNA, so there
   is no native library to build or to put on `java.library.path`.
