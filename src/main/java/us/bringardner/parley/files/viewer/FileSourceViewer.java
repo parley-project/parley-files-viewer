@@ -1891,20 +1891,43 @@ Tree.selectionForeground
 			return;
 		}
 
-		executeExternal(exe,f);
+		// (the application the user picked from the list knows how it is started; text typed in the
+		// dialog is a program's path)
+		RegData chosen = null;
+		for(RegData d : list) {
+			if( exe.equals(d.path) ) {
+				chosen = d;
+				break;
+			}
+		}
+
+		executeExternal(exe,chosen,f);
 
 	}
 
-	private void executeExternal(String exe1, FileSource f) {
+	private void executeExternal(String exe, RegData handler, FileSource f) {
 		try {
-			final String exe = exe1;
-			if(System.getProperty("os.name").toLowerCase().startsWith("mac")) {
-				if( exe1.endsWith(".app")) {
-					exe1 = "open -a "+exe1;
-				}
+			String path = f.getAbsolutePath();
+			if( f instanceof FileProxy ) {
+				path = ((FileProxy)f).getTarget().getAbsolutePath();
 			}
 
-			ProcessBuilder b = new ProcessBuilder().command(exe1+" "+f.getAbsolutePath());
+			// One argument to a string: a ProcessBuilder takes a single string as the name of the
+			// program, so "C:\Program Files\App\app.exe C:\file.txt" is a program that is not found.
+			List<String> command;
+			if( handler != null ) {
+				command = handler.getCommandLine(path);
+			} else {
+				command = new ArrayList<>();
+				if( System.getProperty("os.name").toLowerCase().startsWith("mac") && exe.endsWith(".app") ) {
+					command.add("open");
+					command.add("-a");
+				}
+				command.add(exe);
+				command.add(path);
+			}
+
+			ProcessBuilder b = new ProcessBuilder().command(command);
 			Process proc = b.start();
 			if( proc == null ) {
 				MessageDialog.showErrorDialog("Could not execute "+exe, "");
