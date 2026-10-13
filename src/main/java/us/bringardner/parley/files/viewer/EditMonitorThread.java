@@ -254,7 +254,7 @@ public class EditMonitorThread extends BaseThread implements CopyProgressListner
 	}
 
 
-	private static void download(CopyThread copythread, CopySingleDialog dialog) {
+	static void download(CopyThread copythread, CopySingleDialog dialog) {
 		long start = System.currentTimeMillis();
 		copythread.start();
 		try {

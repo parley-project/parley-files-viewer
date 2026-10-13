@@ -1372,17 +1372,120 @@ Tree.selectionForeground
 
 
 
+	/** the copies made of files that are not on this machine, by file and version */
+	private static final Map<String,File> downloads = new HashMap<>();
+
+	/**
+	 * A file on this machine for an application to open. A local file is itself; any other is
+	 * copied to the temporary folder (once for each version of it) under its own name, so the
+	 * application chooses by its extension and shows the right title.
+	 * <p>
+	 * It waits for the copy, with a progress dialog that appears after two seconds, so it must not
+	 * be called on the event dispatch thread (see {@link #withLocalFile}).
+	 *
+	 * @return the file, or null if the copy was canceled or failed
+	 */
 	public File getLocalFileDownloadIfNeeded(FileSource f) {
-		File ret = null;
 		if (f instanceof FileProxy) {
-			ret = ((FileProxy) f).getTarget();								
-		} else {
-			File temp = new File(getTempDir(),""+System.currentTimeMillis()+f.getName());
+			return ((FileProxy) f).getTarget();
+		}
+		if (SwingUtilities.isEventDispatchThread()) {
+			throw new IllegalStateException("A file is downloaded off the event thread: see withLocalFile");
+		}
+
+		try {
+			// (the host is part of the answer: two servers can have the same path)
+			String key = System.identityHashCode(f.getFileSourceFactory())+"|"+f.getAbsolutePath()+"|"+f.lastModified()+"|"+f.length();
+			synchronized (downloads) {
+				File have = downloads.get(key);
+				if (have != null && have.isFile()) {
+					return have;
+				}
+			}
+
+			File dir = new File(getTempDir(), "open-"+System.currentTimeMillis()+"-"+System.nanoTime());
+			if (!dir.mkdirs()) {
+				throw new IOException("Can't create "+dir);
+			}
+			File temp = new File(dir, f.getName());
+			// (a folder is removed after what is in it)
+			dir.deleteOnExit();
 			temp.deleteOnExit();
 
-
+			FileSource local = FileSourceFactory.getDefaultFactory().createFileSource(temp.getAbsolutePath());
+			CopySingleDialog dialog = new CopySingleDialog();
+			dialog.setTitle("Download ");
+			EditMonitorThread.download(new CopyThread(f, local, dialog), dialog);
+			if (dialog.isCanceled() || !temp.isFile()) {
+				temp.delete();
+				dir.delete();
+				return null;
+			}
+			// (what an application changes in its copy is not sent back: it is a read-only open)
+			temp.setReadOnly();
+			synchronized (downloads) {
+				downloads.put(key, temp);
+			}
+			return temp;
+		} catch (IOException e) {
+			showError("Can't download "+f.getName(), e);
+			return null;
 		}
-		return ret;
+	}
+
+	/**
+	 * Runs an action with a file on this machine for a file source: at once for a local file, and
+	 * for any other after it has been downloaded, which is done off the event thread so the
+	 * progress dialog is shown. The action is not run if the download is canceled or fails.
+	 */
+	public void withLocalFile(FileSource f, java.util.function.Consumer<File> action) {
+		if (f instanceof FileProxy) {
+			action.accept(((FileProxy) f).getTarget());
+			return;
+		}
+		Thread t = new Thread(()->{
+			File local = getLocalFileDownloadIfNeeded(f);
+			if (local != null) {
+				action.accept(local);
+			}
+		}, "Download "+f.getName());
+		t.setDaemon(true);
+		t.start();
+	}
+
+	/** a program the user named, to be started with a file */
+	private static class ProgramRegData extends RegData {
+
+		ProgramRegData(String path) {
+			super(new File(path).getName(), path);
+		}
+
+		@Override
+		public List<Icon> getIcons() throws IOException {
+			return new ArrayList<>();
+		}
+
+		@Override
+		public Icon getIcon(int width, int height) throws IOException {
+			return null;
+		}
+
+		@Override
+		public String getCommand() {
+			return path;
+		}
+
+		@Override
+		public List<String> getCommandLine(String file) {
+			List<String> ret = new ArrayList<>();
+			if (System.getProperty("os.name").toLowerCase().startsWith("mac") && path.endsWith(".app")) {
+				ret.add("open");
+				ret.add("-a");
+			}
+			ret.add(path);
+			ret.add(file);
+			return ret;
+		}
 	}
 
 	public void edit(FileSource file) {
@@ -1422,17 +1525,21 @@ Tree.selectionForeground
 	}
 
 	public void print(FileSource file) {
-		File local = getLocalFileDownloadIfNeeded(file);
-		try {
-			Desktop.getDesktop().print(local);
-		} catch (IOException e) {
-			MessageDialog.showErrorDialog(e.getMessage(),"Can't print "+local+"\n"+e);
-		}		
+		withLocalFile(file, local->{
+			try {
+				Desktop.getDesktop().print(local);
+			} catch (IOException e) {
+				MessageDialog.showErrorDialog(e.getMessage(),"Can't print "+local+"\n"+e);
+			}
+		});
 	}
 
 
 	public void open1(FileSource file) {
-		File local = getLocalFileDownloadIfNeeded(file);
+		withLocalFile(file, this::open1Local);
+	}
+
+	private void open1Local(File local) {
 		try {
 			Desktop.getDesktop().open(local);
 		} catch (IOException e1) {
@@ -1901,7 +2008,21 @@ Tree.selectionForeground
 			}
 		}
 
-		executeExternal(exe,chosen,f);
+		if( f instanceof FileProxy ) {
+			executeExternal(exe,chosen,f);
+		} else {
+			// A file on another machine: the application gets a copy that is downloaded, and what
+			// it changes is offered to be sent back when it ends (as Edit does).
+			RegData app = chosen != null ? chosen : new ProgramRegData(exe);
+			File copy = new File(getTempDir(),""+System.currentTimeMillis()+f.getName());
+			try {
+				FileSource local = FileSourceFactory.getDefaultFactory().createFileSource(copy.getAbsolutePath());
+				copy.deleteOnExit();
+				new EditMonitorThread(this, f, local, app).start();
+			} catch (IOException e) {
+				showError("", e);
+			}
+		}
 
 	}
 

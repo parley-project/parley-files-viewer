@@ -410,7 +410,7 @@ public class SearchFrame extends JFrame {
 					ArrayList<FileSource> list = getSelectedFromTable();
 					if( list !=null && list.size()>0) {
 						for(FileSource file : list) {
-							File local = browser.getLocalFileDownloadIfNeeded(file);
+							// (nothing is downloaded when the menu is built: opening a file does that, off this thread)
 							
 							
 						}
