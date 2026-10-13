@@ -1483,12 +1483,15 @@ Tree.selectionForeground
 		this.factory = factory1;
 
 		getFrame().setIconImages(null);
-		if (Desktop.isDesktopSupported()) { 
+		// The screen menu bar is a Mac feature: elsewhere the menu stays in the window (and asking
+		// throws UnsupportedOperationException), so it is only taken out of the window when the
+		// desktop will show it.
+		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Action.APP_MENU_BAR)) {
 			Desktop desktop = Desktop.getDesktop();
 			JMenuBar menuBar = getMenuBar();
 			getNorthPanel().remove(menuBar);
-			desktop.setDefaultMenuBar(menuBar); 
-		} 
+			desktop.setDefaultMenuBar(menuBar);
+		}
 
 
 		showHidden    = pref.getBoolean(PREF_SHOW_HIDDEN+"."+factory1.getTypeId(),    showHidden);
