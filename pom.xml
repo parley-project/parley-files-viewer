@@ -26,6 +26,68 @@
 		<jna.version>5.19.1</jna.version>
 	</properties>
 
+	<profiles>
+		<!-- Native binary named parley-files-viewer: mvn -Pnative package -->
+		<profile>
+			<id>native</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.graalvm.buildtools</groupId>
+						<artifactId>native-maven-plugin</artifactId>
+						<version>0.11.0</version>
+						<extensions>true</extensions>
+						<executions>
+							<execution>
+								<id>build-native</id>
+								<goals>
+									<goal>compile-no-fork</goal>
+								</goals>
+								<phase>package</phase>
+							</execution>
+						</executions>
+						<configuration>
+							<imageName>parley-files-viewer</imageName>
+							<mainClass>us.bringardner.parley.files.viewer.FileSourceViewer</mainClass>
+							<buildArgs>
+								<!-- fsh (a dependency) ships native-image.properties with -Djava.awt.headless=true; this is a window app -->
+								<buildArg>-Djava.awt.headless=false</buildArg>
+								<!-- Cp1252 etc.: JNA looks the platform charset up by name -->
+								<buildArg>-H:+AddAllCharsets</buildArg>
+							</buildArgs>
+						</configuration>
+					</plugin>
+					<!-- AWT reads its font configuration from java.home/lib, and the image's java.home is
+					     its own folder (see FileSourceViewer.main): ship the JDK's file beside the exe -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-resources-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>native-fontconfig</id>
+								<phase>package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${project.build.directory}/lib</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${java.home}/lib</directory>
+											<includes>
+												<include>fontconfig.bfc</include>
+											</includes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 	<build>
 		<plugins>
 			<!-- Attaches the -sources.jar. The version comes from parley-parent; package (not deploy)

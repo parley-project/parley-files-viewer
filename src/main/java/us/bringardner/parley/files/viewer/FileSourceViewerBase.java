@@ -69,6 +69,7 @@ public class FileSourceViewerBase {
 	private JMenuBar menuBar;
 	private JMenuItem mntmExit;
 	private JMenuItem mntmTerminal;
+	private JMenuItem mntmAbout;
 	private JMenuItem mntmRemoteBrowser;
 	private JMenuItem mntmLocalBrowser;
 	private JMenuItem mntmClose;
@@ -172,6 +173,10 @@ public class FileSourceViewerBase {
 		return mntmExit;
 	}
 
+
+	public JMenuItem getMntmAbout() {
+		return mntmAbout;
+	}
 
 	public JMenuItem getMntmTerminal() {
 		return mntmTerminal;
@@ -367,6 +372,11 @@ public class FileSourceViewerBase {
         JMenu fileMenu = new JMenu("Options");
         fileMenu.setIcon(null);
         menuBar.add(fileMenu);
+
+        JMenu helpMenu = new JMenu("Help");
+        menuBar.add(helpMenu);
+        mntmAbout = new JMenuItem("About");
+        helpMenu.add(mntmAbout);
         
         mnNew = new JMenu("New");
         fileMenu.add(mnNew);

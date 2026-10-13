@@ -1091,6 +1091,16 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+		// A GraalVM native image has no java.home, and AWT needs one (font configuration): use the
+		// folder of the executable, where the image keeps the AWT libraries.
+		if( System.getProperty("java.home") == null ) {
+			ProcessHandle.current().info().command().ifPresent(c->{
+				java.io.File dir = new java.io.File(c).getParentFile();
+				if( dir != null ) {
+					System.setProperty("java.home", dir.getAbsolutePath());
+				}
+			});
+		}
 		/*
 		 * Load the registry
 		 */
@@ -2746,6 +2756,13 @@ Tree.selectionForeground
 			}
 		});
 
+		// Help > About (the Desktop about handler exists only on macOS)
+		getMntmAbout().addActionListener((e)->{
+			AboutFrame frame = new AboutFrame();
+			frame.setLocationRelativeTo(null);
+			frame.setVisible(true);
+		});
+
 		JMenuItem terminal = getMntmTerminal();
 		//getMnNew().remove(terminal);
 		terminal.addActionListener((e)->{
@@ -2842,6 +2859,8 @@ Tree.selectionForeground
 	}
 
 	private void actionOpenTerminal(FileSource cwd) {
+		// "exit" in the terminal must close the terminal, not end the viewer's JVM
+		Console.exitJvm = false;
 		Console console = new Console();
 
 		try {
