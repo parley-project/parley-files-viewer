@@ -173,6 +173,9 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	private static Preferences pref = Preferences.userNodeForPackage(FileSourceViewer.class);
 
 	public static final String PREF_SHOW_HIDDEN = "ShowHidden";
+	/** A file from another machine larger than this many MB is asked about before it is downloaded; 0 never asks. */
+	public static final String PREF_LARGE_FILE_MB = "LargeFileMb";
+	public static final int DEFAULT_LARGE_FILE_MB = 50;
 	public static final String PREF_SHOW_EXTENTION = "ShowExtention";
 	public static final String PREF_START_LOCATION = "StartLocation";
 	public static final String PREF_COLOR = "Color";
@@ -1372,6 +1375,74 @@ Tree.selectionForeground
 
 
 
+	/** "3.2 GB", "512 KB" */
+	static String formatSize(long bytes) {
+		String [] units = {"bytes", "KB", "MB", "GB", "TB"};
+		double v = bytes;
+		int i = 0;
+		while( v >= 1024 && i < units.length-1 ) {
+			v /= 1024;
+			i++;
+		}
+		return i == 0 ? bytes+" bytes" : String.format("%.1f %s", v, units[i]);
+	}
+
+	/**
+	 * Asks whether to download a large file, which an application can only open as a local copy.
+	 * Overridden by a test, which can't answer a dialog.
+	 *
+	 * @return true to go on
+	 */
+	protected boolean askLargeDownload(String message) {
+		int[] answer = new int[1];
+		Runnable ask = ()->{
+			answer[0] = javax.swing.JOptionPane.showConfirmDialog(getFrame(), message, "Large file",
+					javax.swing.JOptionPane.YES_NO_OPTION, javax.swing.JOptionPane.WARNING_MESSAGE);
+		};
+		try {
+			if( SwingUtilities.isEventDispatchThread() ) {
+				ask.run();
+			} else {
+				SwingUtilities.invokeAndWait(ask);
+			}
+		} catch (Exception e) {
+			return false;
+		}
+		return answer[0] == javax.swing.JOptionPane.YES_OPTION;
+	}
+
+	/**
+	 * A file on another machine is downloaded before an application can open it, so a large one
+	 * is asked about first (the limit is the preference PREF_LARGE_FILE_MB, 50 MB unless set; 0
+	 * never asks). A local file is never asked about.
+	 *
+	 * @param sendsBack the file is edited, and what is changed is sent back whole
+	 * @return true to go on with the download
+	 */
+	boolean confirmLargeDownload(FileSource f, boolean sendsBack) {
+		if( f instanceof FileProxy ) {
+			return true;
+		}
+		long limit = pref.getInt(PREF_LARGE_FILE_MB, DEFAULT_LARGE_FILE_MB) * 1024L * 1024L;
+		if( limit <= 0 ) {
+			return true;
+		}
+		long size;
+		try {
+			size = f.length();
+		} catch (IOException e) {
+			// (the download fails in its own way, with its own message)
+			return true;
+		}
+		if( size < limit ) {
+			return true;
+		}
+		String message = f.getName()+" is "+formatSize(size)+" and is not on this computer.\n"
+				+ "It is downloaded to a temporary folder before it can be opened.\n"
+				+ (sendsBack ? "If you change it, the whole file is sent back.\n" : "")
+				+ "\nDownload it?";
+		return askLargeDownload(message);
+	}
 	/** the copies made of files that are not on this machine, by file and version */
 	private static final Map<String,File> downloads = new HashMap<>();
 
@@ -1401,6 +1472,11 @@ Tree.selectionForeground
 				if (have != null && have.isFile()) {
 					return have;
 				}
+			}
+
+			// (a copy already made is used without asking: that was returned above)
+			if( !confirmLargeDownload(f, false) ) {
+				return null;
 			}
 
 			File dir = new File(getTempDir(), "open-"+System.currentTimeMillis()+"-"+System.nanoTime());
@@ -1509,7 +1585,7 @@ Tree.selectionForeground
 				try {
 					local = FileSourceFactory.getDefaultFactory().createFileSource(local1.getAbsolutePath());
 					local1.deleteOnExit();
-					new EditMonitorThread(this, file,local, editor).start();					
+					if( confirmLargeDownload(file, true) ) { new EditMonitorThread(this, file,local, editor).start(); }					
 				} catch (IOException e) {
 					showError("", e);
 				}
@@ -2018,7 +2094,7 @@ Tree.selectionForeground
 			try {
 				FileSource local = FileSourceFactory.getDefaultFactory().createFileSource(copy.getAbsolutePath());
 				copy.deleteOnExit();
-				new EditMonitorThread(this, f, local, app).start();
+				if( confirmLargeDownload(f, true) ) { new EditMonitorThread(this, f, local, app).start(); }
 			} catch (IOException e) {
 				showError("", e);
 			}
@@ -3341,7 +3417,7 @@ Tree.selectionForeground
 				FileSource local;
 				try {
 					local = FileSourceFactory.getDefaultFactory().createFileSource(local1.getAbsolutePath());					
-					new EditMonitorThread(this, file,local, editor).start();					
+					if( confirmLargeDownload(file, true) ) { new EditMonitorThread(this, file,local, editor).start(); }					
 				} catch (IOException e) {
 					showError("", e);
 				}
