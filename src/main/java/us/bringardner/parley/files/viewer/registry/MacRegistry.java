@@ -51,6 +51,21 @@ public class MacRegistry implements IRegistry {
 			return app.getIcon(width, height);
 		}
 
+		@Override
+		public List<String> getCommandLine(String file) {
+			List<String> ret = new ArrayList<>();
+			if( path.endsWith(".app")) {
+				// (the path as one argument: an application's name can have spaces)
+				ret.add("open");
+				ret.add("-Wn");
+				ret.add(path);
+			} else {
+				ret.add(path);
+			}
+			ret.add(file);
+			return ret;
+		}
+
 		String execPath;
 
 		@Override

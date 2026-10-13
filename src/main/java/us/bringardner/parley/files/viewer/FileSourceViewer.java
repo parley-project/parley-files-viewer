@@ -1443,7 +1443,7 @@ Tree.selectionForeground
 
 			for (IRegistry.RegData exe : list) {
 				try {
-					proc = (new ProcessBuilder().command(exe+" "+path)).start();
+					proc = (new ProcessBuilder().command(exe.getCommandLine(path))).start();
 					break;
 				} catch (IOException e) {
 					System.out.println("Error executing "+exe+e);

@@ -50,7 +50,46 @@ public interface IRegistry {
 		public abstract List<Icon> getIcons() throws IOException;
 		public abstract Icon getIcon(int width, int height) throws IOException;
 		public abstract String getCommand();
-		
+
+		/**
+		 * The command that opens a file with this application, one argument to a string (a
+		 * ProcessBuilder takes a single string as the name of the program, so the program, its
+		 * options and the file's path, which may have spaces, cannot be one).
+		 */
+		public List<String> getCommandLine(String file) {
+			List<String> ret = splitCommand(getCommand());
+			ret.add(file);
+			return ret;
+		}
+
+		/** Splits a command line into its arguments, where a double quote holds spaces. */
+		public static List<String> splitCommand(String command) {
+			List<String> ret = new ArrayList<>();
+			StringBuilder b = new StringBuilder();
+			boolean quoted = false;
+			boolean any = false;
+			for(int idx = 0; idx < command.length(); idx++) {
+				char c = command.charAt(idx);
+				if( c == '"' ) {
+					quoted = !quoted;
+					any = true;
+				} else if( Character.isWhitespace(c) && !quoted ) {
+					if( any ) {
+						ret.add(b.toString());
+						b.setLength(0);
+						any = false;
+					}
+				} else {
+					b.append(c);
+					any = true;
+				}
+			}
+			if( any ) {
+				ret.add(b.toString());
+			}
+			return ret;
+		}
+
 		public RegData(String name, String path) {
 			this.name= name;
 			this.path = path;
