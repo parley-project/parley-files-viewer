@@ -18,7 +18,7 @@
 # others.
 #
 # Needs one secret, PACKAGES_TOKEN: a token that can read the Parley and fsh packages
-# (https://maven.pkg.github.com/tony-bringardner/tony-bringardner); the workflow's own token cannot
+# (https://maven.pkg.github.com/parley-project/parley-files-viewer); the workflow's own token cannot
 # read another repository's packages. Without it the build uses the workflow token, which works
 # only if those packages grant this repository access.
 
@@ -87,7 +87,7 @@ jobs:
                   <repository><id>central</id><url>https://repo1.maven.org/maven2</url></repository>
                   <repository>
                     <id>github</id>
-                    <url>https://maven.pkg.github.com/tony-bringardner/tony-bringardner</url>
+                    <url>https://maven.pkg.github.com/parley-project/parley-files-viewer</url>
                     <snapshots><enabled>true</enabled></snapshots>
                   </repository>
                 </repositories>
