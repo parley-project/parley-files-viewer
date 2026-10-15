@@ -1,23 +1,23 @@
 # parley-files-viewer
 
 A Swing application for browsing, copying, searching and editing files on any
-[parley-files](https://github.com/tony-bringardner/parley-files) file system: local, memory, FTP,
+[parley-files](https://github.com/parley-project/parley-files) file system: local, memory, FTP,
 SFTP and JDBC.
 
 **An example of what Parley can help you build.** The viewer is an application, not part of the
 Parley library: it uses the library the same way your own application would, so it is not in
-[parley-bom](https://github.com/tony-bringardner/parley-bom). Its window and Dock icons (the Parley tower with a folder badge) come from
-[parley-brand](https://github.com/tony-bringardner/parley-brand). Other examples are
-[fsh](https://github.com/tony-bringardner/fsh), a shell for any parley-files file system, and
-[fsh-ide](https://github.com/tony-bringardner/fsh-ide), an IDE for fsh scripts.
+[parley-bom](https://github.com/parley-project/parley-bom). Its window and Dock icons (the Parley tower with a folder badge) come from
+[parley-brand](https://github.com/parley-project/parley-brand). Other examples are
+[fsh](https://github.com/parley-project/parley-fsh), a shell for any parley-files file system, and
+[fsh-ide](https://github.com/parley-project/parley-fsh-ide), an IDE for fsh scripts.
 
 Formerly `com.bringardner:bjl_file_system_viewer` (BjlFileSystemViewer), with packages under
 `us.bringardner.io.filesource.viewer`; they are now `us.bringardner.parley.files.viewer`.
 
 - **Java 11** or later, like the other Parley modules (the "Open terminal" action uses
-  [fsh](https://github.com/tony-bringardner/fsh), which runs on Java 11 too)
+  [fsh](https://github.com/parley-project/parley-fsh), which runs on Java 11 too)
 - Built on parley-core, parley-io, parley-net, parley-files, parley-files-swing, parley-files-sftp, parley-files-jdbc
-  and [swing-widgets](https://github.com/tony-bringardner/swing-widgets), which now holds the
+  and [swing-widgets](https://github.com/parley-project/swing-widgets), which now holds the
   gradient buttons, dialogs and fields that used to be the viewer's `us.bringardner.swing` package
 
 ## Opening files with other applications (macOS)
