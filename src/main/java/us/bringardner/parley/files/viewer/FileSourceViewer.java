@@ -123,9 +123,7 @@ import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeWillExpandListener;
-import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.FontUIResource;
-import javax.swing.plaf.IconUIResource;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableCellRenderer;
@@ -160,10 +158,10 @@ import us.bringardner.parley.net.client.VisualCertificateValidator;
 import us.bringardner.fsh.Console;
 
 import us.bringardner.swing.gradient.GradientColors;
+import us.bringardner.swing.gradient.GradientLook;
 import us.bringardner.swing.dialog.FontDialog;
 import us.bringardner.swing.dialog.MessageDialog;
 import us.bringardner.swing.dialog.MessageDialog.Response;
-import us.bringardner.swing.ui.ScrollBarUI;
 import us.bringardner.swing.dialog.SettingsDialog;
 
 
@@ -1056,8 +1054,6 @@ Panel.font = javax.swing.plaf.FontUIResource
 	public static Icon upArrow = new ImageIcon(FileSourceViewer.class.getResource(FileSourceViewer.ICON_LOCATION+"/UpArrow20x20.png"));
 	public static Icon dnArrow = new ImageIcon(FileSourceViewer.class.getResource(FileSourceViewer.ICON_LOCATION+"/DnArrow20x20.png"));
 
-	static Icon tree_collapsed = new ImageIcon(FileSourceViewer.class.getResource(FileSourceViewer.ICON_LOCATION+"/tree_closed16x16.png"));
-	static Icon tree_expanded = new ImageIcon(FileSourceViewer.class.getResource(FileSourceViewer.ICON_LOCATION+"/tree_open16x16.png"));
 
 
 	public static void setFontFont(Font font,boolean updatePreference ) {
@@ -1112,70 +1108,9 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 		}).start();
 
-		UIDefaults defaults = javax.swing.UIManager.getDefaults();
-
-		//FlatMacLightLaf.setup();
-		Icon V = new ImageIcon(FileSourceViewer.class.getResource(FileSourceViewer.ICON_LOCATION+"/V15x15.png"));
-
-		/*
-
-		for(Object key : defaults.keySet()) {
-			String name = key.toString();
-			if( name.contains("Label")) {
-					Object val = defaults.get(key);
-					System.out.println(name+" = "+val.getClass()+" = "+val);
-					if (val instanceof IconUIResource) {
-						IconUIResource icon = (IconUIResource) val;
-						System.out.println(""+icon.getIconWidth()+" x "+icon.getIconHeight());
-					}
-
-
-			}
-		}
-
-		System.exit(0);
-Table.selectionBackground
-Table.selectionForeground
-Tree.selectionBackground
-Tree.selectionForeground
-
-		 */
-		defaults.put("Tree.selectionBackground", GradiantPanelEndColor);
-		defaults.put("Tree.selectionForeground", GradiantPanelStartColor);
-
-
-
-		defaults.put("ScrollBarUI", ScrollBarUI.class.getCanonicalName());
-		defaults.put("ScrollBar.background", new ColorUIResource(Color.red));
-		defaults.put("ScrollBar.foreground", new ColorUIResource(Color.blue));
-
-		defaults.put("ScrollBar.track", new ColorUIResource(GradiantPanelStartColor));
-		defaults.put("ScrollBar.thumb", new ColorUIResource(GradiantPanelEndColor));
-
-
-
-		defaults.put("Tree.collapsedIcon", new IconUIResource(tree_collapsed));
-		defaults.put("Tree.expandedIcon", new IconUIResource(tree_expanded));
-		defaults.put("Tree.openIcon", new IconUIResource(V));
-		defaults.put("Tree.leafIcon", new IconUIResource(V));
-		defaults.put("Tree.closedIcon", new IconUIResource(V));
-		defaults.put("Tree.textBackground", TRANSPARENT);
-
-		defaults.put("Table.gridColor", GradiantPanelEndColor);
-		defaults.put("Table.background", TRANSPARENT);				
-		defaults.put("Table.textBackground", TRANSPARENT);
-
-		//defaults.put("TableHeaderUI", TableHeaderUI.class.getCanonicalName());
-		defaults.put("TableHeader.background", new ColorUIResource(GradiantPanelEndColor));		
-		defaults.put("TableHeader.foreground", new ColorUIResource(GradiantPanelEndColor));
-
-		defaults.put("Table.ascendingSortIcon", new IconUIResource(upArrow));
-		defaults.put("Table.descendingSortIcon", new IconUIResource(dnArrow));
-
-		//defaults.put("TableHeader.focusCellBackground", new ColorUIResource(Color.blue));
-
-		defaults.put("Panel.background", GradiantPanelStartColor);
-		defaults.put("Panel.foreground", GradiantPanelEndColor);
+		// The gradient look (gradient panels and scroll bars, see-through trees and tables, the gold
+		// arrows), shared with the other Parley applications through swing-widgets
+		GradientLook.install();
 		String fontName = pref.get(PREF_FONT_FAMILY, null);
 		if( fontName!=null) {
 			Font font = new Font(fontName,pref.getInt(PREF_FONT_STYLE, Font.PLAIN),pref.getInt(PREF_FONT_SIZE, 12));
