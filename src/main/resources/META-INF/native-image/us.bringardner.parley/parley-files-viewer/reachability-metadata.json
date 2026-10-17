@@ -4174,9 +4174,6 @@
       "glob": "us/bringardner/parley/files/viewer/icons/fileicon_not_readable_20.png"
     },
     {
-      "glob": "us/bringardner/parley/files/viewer/icons/folder.png"
-    },
-    {
       "glob": "us/bringardner/parley/files/viewer/icons/folder_closed_20.png"
     },
     {
@@ -4184,9 +4181,6 @@
     },
     {
       "glob": "us/bringardner/parley/files/viewer/icons/folder_opened_20.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/logo_128.png"
     },
     {
       "glob": "us/bringardner/parley/files/viewer/icons/sweep_clear30x30.png"
