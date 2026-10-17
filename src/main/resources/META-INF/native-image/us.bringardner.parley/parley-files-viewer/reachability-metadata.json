@@ -4162,9 +4162,6 @@
       "glob": "us/bringardner/parley/files/viewer/icons/UpArrow20x20.png"
     },
     {
-      "glob": "us/bringardner/parley/files/viewer/icons/V15x15.png"
-    },
-    {
       "glob": "us/bringardner/parley/files/viewer/icons/eye_closed30x30.png"
     },
     {
@@ -4184,12 +4181,6 @@
     },
     {
       "glob": "us/bringardner/parley/files/viewer/icons/sweep_clear30x30.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/tree_closed16x16.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/tree_open16x16.png"
     },
     {
       "glob": "us/bringardner/swing/icons/Error100x100.png"
@@ -4272,6 +4263,21 @@
     },
     {
       "bundle": "sun.awt.resources.awt"
+    },
+    {
+      "glob": "us/bringardner/swing/icons/V15x15.png"
+    },
+    {
+      "glob": "us/bringardner/swing/icons/tree_closed16x16.png"
+    },
+    {
+      "glob": "us/bringardner/swing/icons/tree_open16x16.png"
+    },
+    {
+      "glob": "us/bringardner/swing/icons/UpArrow20x20.png"
+    },
+    {
+      "glob": "us/bringardner/swing/icons/DnArrow20x20.png"
     }
   ]
 }
