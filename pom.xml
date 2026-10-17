@@ -140,7 +140,8 @@
 			<groupId>us.bringardner.parley</groupId>
 			<!-- the file chooser, connection dialog, drag and drop and progress monitor -->
 			<artifactId>parley-files-swing</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<!-- 1.1.0: its dialogs follow the gradient look -->
+			<version>1.1.0-SNAPSHOT</version>
 		</dependency>
 		<!-- brings its own maintained JSch (same com.jcraft.jsch packages), so the old
 		     com.jcraft:jsch 0.1.54 is no longer listed here -->
