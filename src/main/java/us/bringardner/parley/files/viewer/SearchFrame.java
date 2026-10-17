@@ -25,6 +25,7 @@
  */
 package us.bringardner.parley.files.viewer;
 
+import us.bringardner.swing.gradient.GradientColors;
 import us.bringardner.parley.brand.ParleyBrand;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -152,8 +153,8 @@ public class SearchFrame extends JFrame {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
 		contentPane = new GradientPanel(GradientPanel.DIAGONAL_RIGHT);
-		contentPane.setBackground(FileSourceViewer.GradiantPanelStartColor);
-		contentPane.setForeground(FileSourceViewer.GradiantPanelEndColor);
+		contentPane.setBackground(GradientColors.getStart());
+		contentPane.setForeground(GradientColors.getEnd());
 
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
@@ -164,8 +165,8 @@ public class SearchFrame extends JFrame {
 		detailPanel.setLayout(new BoxLayout(detailPanel, BoxLayout.Y_AXIS));
 
 		byNamePanel =    new GradientPanel(GradientPanel.DIAGONAL_RIGHT);
-		byNamePanel.setBackground(FileSourceViewer.GradiantPanelStartColor);
-		byNamePanel.setForeground(FileSourceViewer.GradiantPanelEndColor);
+		byNamePanel.setBackground(GradientColors.getStart());
+		byNamePanel.setForeground(GradientColors.getEnd());
 
 		detailPanel.add(byNamePanel);
 		byNamePanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
@@ -314,8 +315,8 @@ public class SearchFrame extends JFrame {
 		byNamePanel.add(btnAdvanced);
 
 		bySizePanel = new GradientPanel(GradientPanel.DIAGONAL_RIGHT);
-		bySizePanel.setBackground(FileSourceViewer.GradiantPanelStartColor);
-		bySizePanel.setForeground(FileSourceViewer.GradiantPanelEndColor);
+		bySizePanel.setBackground(GradientColors.getStart());
+		bySizePanel.setForeground(GradientColors.getEnd());
 
 		
 		detailPanel.add(bySizePanel);
@@ -355,8 +356,8 @@ public class SearchFrame extends JFrame {
 				typeComboBox.setModel(new DefaultComboBoxModel<String>(new String[] {"File", "Dir"}));
 
 		byDatePanel = new GradientPanel(GradientPanel.DIAGONAL_RIGHT);
-		byDatePanel.setBackground(FileSourceViewer.GradiantPanelStartColor);
-		byDatePanel.setForeground(FileSourceViewer.GradiantPanelEndColor);
+		byDatePanel.setBackground(GradientColors.getStart());
+		byDatePanel.setForeground(GradientColors.getEnd());
 		detailPanel.add(byDatePanel);
 		byDatePanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
 

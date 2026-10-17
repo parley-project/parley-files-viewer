@@ -25,6 +25,7 @@
  */
 package us.bringardner.parley.files.viewer;
 
+import us.bringardner.swing.gradient.GradientColors;
 import java.awt.Component;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -97,7 +98,7 @@ public class FileTableCellRenderer implements TableCellRenderer {
 		}
 		
 		if( isSelected ) {
-			comp.setBackground(FileSourceViewer.GradiantPanelStartColor);
+			comp.setBackground(GradientColors.getStart());
 		}  else {
 			comp.setBackground(FileSourceViewer.TRANSPARENT);
 		}

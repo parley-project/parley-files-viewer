@@ -16,6 +16,10 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
 
 ### Changed (no code change needed)
 
+- Options > Font is now Options > Appearance... (also the Preferences item on macOS): the font and a
+  color scheme, from named schemes or any one color, with a preview. It is saved and comes back at
+  the next start, and changes the open windows at once. The look and the settings are shared with
+  the other Parley applications through swing-widgets.
 - The window and Dock icons are the Parley app icon with a folder badge, from
   [parley-brand](https://github.com/parley-project/parley-brand), in every size from 16 to 512 px.
 - The viewer is an example application built on Parley, not part of the library, so it is no longer
