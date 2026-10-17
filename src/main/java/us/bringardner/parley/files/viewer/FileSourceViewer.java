@@ -843,8 +843,6 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 		return ret;
 	}
 
-	static Icon folderIcon = new ImageIcon(FileSourceViewer.class.getResource(ICON_LOCATION+"/logo_128.png"));
-
 	public static synchronized void disposeFrame(int id) {
 
 		if( runningViewers.size() == 1) {

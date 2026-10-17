@@ -25,6 +25,7 @@
  */
 package us.bringardner.parley.files.viewer;
 
+import us.bringardner.parley.brand.ParleyBrand;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 
@@ -83,6 +84,7 @@ public class CopyManagerFrameBase extends JFrame {
 	 * Create the frame.
 	 */
 	public CopyManagerFrameBase() {
+		setIconImages(ParleyBrand.appIcons("files"));
 		setBounds(100, 100, 646, 393);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));

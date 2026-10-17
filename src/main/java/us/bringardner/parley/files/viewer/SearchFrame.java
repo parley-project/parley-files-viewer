@@ -25,11 +25,11 @@
  */
 package us.bringardner.parley.files.viewer;
 
+import us.bringardner.parley.brand.ParleyBrand;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -148,7 +148,7 @@ public class SearchFrame extends JFrame {
 		setTitle("Search");
 		setBounds(100, 100, 1086, 527);
 		setLocationRelativeTo(null);
-		setIconImage(Toolkit.getDefaultToolkit().getImage(SearchFrame.class.getResource(FileSourceViewer.ICON_LOCATION+"/folder.png")));
+		setIconImages(ParleyBrand.appIcons("files"));
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
 		contentPane = new GradientPanel(GradientPanel.DIAGONAL_RIGHT);

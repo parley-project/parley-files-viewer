@@ -25,12 +25,12 @@
  */
 package us.bringardner.parley.files.viewer;
 
+import us.bringardner.parley.brand.ParleyBrand;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -259,7 +259,7 @@ public class FileSourceViewerBase {
 	 */
 	private void initialize() {
 		frame = new JFrame();
-		frame.setIconImage(Toolkit.getDefaultToolkit().getImage(FileSourceViewerBase.class.getResource("/us/bringardner/parley/files/viewer/icons/folder.png")));
+		frame.setIconImages(ParleyBrand.appIcons("files"));
 		frame.setBounds(100, 100, 1252, 669);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		contentPane = new GradientPanel(GradientPanel.DIAGONAL_RIGHT);
