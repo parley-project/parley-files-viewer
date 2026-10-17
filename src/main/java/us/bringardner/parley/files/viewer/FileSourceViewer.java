@@ -112,7 +112,6 @@ import javax.swing.RowSorter.SortKey;
 import javax.swing.SortOrder;
 import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
-import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ListSelectionEvent;
@@ -123,7 +122,6 @@ import javax.swing.event.TreeExpansionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeWillExpandListener;
-import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableCellRenderer;
@@ -159,7 +157,6 @@ import us.bringardner.fsh.Console;
 
 import us.bringardner.swing.gradient.GradientColors;
 import us.bringardner.swing.gradient.GradientLook;
-import us.bringardner.swing.dialog.FontDialog;
 import us.bringardner.swing.dialog.MessageDialog;
 import us.bringardner.swing.dialog.MessageDialog.Response;
 import us.bringardner.swing.dialog.SettingsDialog;
@@ -176,18 +173,12 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	public static final int DEFAULT_LARGE_FILE_MB = 50;
 	public static final String PREF_SHOW_EXTENTION = "ShowExtention";
 	public static final String PREF_START_LOCATION = "StartLocation";
-	public static final String PREF_COLOR = "Color";
 
 	public static final String ICON_LOCATION = "/us/bringardner/parley/files/viewer/icons";
 	// the same colors the swing-widgets gradient widgets use
-	public static final Color GradiantPanelStartColor = GradientColors.getStart();
-	public static final Color GradiantPanelEndColor   = GradientColors.getEnd();
 	public static final Color TRANSPARENT   = GradientColors.TRANSPARENT;
 
 
-	public static final String PREF_FONT_FAMILY = "FontFamily";
-	private static final String PREF_FONT_STYLE = "FontStyle";
-	private static final String PREF_FONT_SIZE = "FontSize";
 
 
 	protected static final String PREF_COL_WIDTHS = "ColumnWidths";
@@ -1056,29 +1047,36 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 
 
-	public static void setFontFont(Font font,boolean updatePreference ) {
-
-		UIDefaults defaults = javax.swing.UIManager.getDefaults();
-		for(Object key : defaults.keySet()) {
-			String name = key.toString().toLowerCase();
-			if( name.endsWith("font")) {
-				defaults.put(key, new FontUIResource(font));					
+	/**
+	 * Opens the appearance settings (the font and colors, shared with the other Parley applications
+	 * through swing-widgets). They are saved in the viewer's preferences, and a new font is given to
+	 * every open viewer's table and tree.
+	 *
+	 * @param owner the window the settings belong to, or null
+	 */
+	static void actionAppearance(java.awt.Window owner) {
+		if( SettingsDialog.showDialog(owner, pref) ) {
+			for(FileSourceViewer v : runningViewers.values()) {
+				v.appearanceChanged();
 			}
 		}
+	}
 
-		if( updatePreference) {
-
-			int size = font.getSize();
-			int style = font.getStyle();
-
-			pref.put(PREF_FONT_FAMILY, font.getFamily());
-			pref.putInt(PREF_FONT_STYLE, style);
-			pref.putInt(PREF_FONT_SIZE, size);
-			try {
-				pref.flush();
-			} catch (BackingStoreException e) {
-			}
+	/** Gives the table and tree the font now in effect, and rows to fit it. */
+	private void appearanceChanged() {
+		Font f = UIManager.getFont("Table.font");
+		if( f == null ) {
+			f = UIManager.getFont("Label.font");
 		}
+		getTable().setFont(f);
+		getTree().setFont(f);
+		setRowSize();
+		try {
+			((FileTableModel) getTable().getModel()).resetIFile();
+		} catch (IOException e) {
+			// the rows keep their old height until the folder is opened again
+		}
+		getTableScrollPane().getColumnHeader().setBackground(GradientColors.getEnd());
 	}
 
 	/**
@@ -1109,13 +1107,9 @@ Panel.font = javax.swing.plaf.FontUIResource
 		}).start();
 
 		// The gradient look (gradient panels and scroll bars, see-through trees and tables, the gold
-		// arrows), shared with the other Parley applications through swing-widgets
-		GradientLook.install();
-		String fontName = pref.get(PREF_FONT_FAMILY, null);
-		if( fontName!=null) {
-			Font font = new Font(fontName,pref.getInt(PREF_FONT_STYLE, Font.PLAIN),pref.getInt(PREF_FONT_SIZE, 12));
-			setFontFont(font, false);
-		}
+		// arrows), shared with the other Parley applications through swing-widgets, with the font
+		// and colors the user chose in the appearance settings
+		GradientLook.install(pref);
 
 		TrustManager[] mgr = { new DynamicTrustManager(null,new VisualCertificateValidator())};
 		SecureBaseObject.setDefaultTrustManagers(mgr);
@@ -1178,8 +1172,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 						@Override
 						public void handlePreferences(PreferencesEvent e) {
-							SettingsDialog d = new SettingsDialog();
-							d.setVisible(true);
+							SwingUtilities.invokeLater(()->actionAppearance(null));
 
 						}
 					});
@@ -1238,7 +1231,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 					viewer.setup(FileSourceFactory.getDefaultFactory(),true);
 					viewer.show();
 					SwingUtilities.invokeLater(()->{
-						viewer.getTableScrollPane().getColumnHeader().setBackground(GradiantPanelEndColor);
+						viewer.getTableScrollPane().getColumnHeader().setBackground(GradientColors.getEnd());
 						viewer.getTableScrollPane().getColumnHeader().setOpaque(false);
 					});
 					//dotest(viewer);
@@ -2707,26 +2700,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 		});
 
-		getMntmFont().addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				FontDialog d = new FontDialog();
-				Font current = getTable().getFont();
-				Font f = d.showDialog(current);
-				if(f !=null &&  !f.equals(current) ) {
-					setFontFont(f, true);
-					getTable().setFont(f);
-					getTree().setFont(f);
-					FileTableModel model = (FileTableModel) getTable().getModel();
-					setRowSize();
-					try {
-						model.resetIFile();
-					} catch (IOException e1) {
-					}
-				}				
-			}
-		});
+		// Options > Appearance...: the font and colors (on macOS, Preferences opens it too)
+		getMntmFont().addActionListener((e)->actionAppearance(getFrame()));
 
 		getMntmSearch().addActionListener(new ActionListener() {
 
