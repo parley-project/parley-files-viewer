@@ -44,19 +44,12 @@ import java.awt.datatransfer.ClipboardOwner;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
-import java.awt.desktop.AboutEvent;
-import java.awt.desktop.AboutHandler;
 import java.awt.desktop.OpenFilesEvent;
 import java.awt.desktop.OpenFilesHandler;
 import java.awt.desktop.OpenURIEvent;
 import java.awt.desktop.OpenURIHandler;
-import java.awt.desktop.PreferencesEvent;
-import java.awt.desktop.PreferencesHandler;
 import java.awt.desktop.PrintFilesEvent;
 import java.awt.desktop.PrintFilesHandler;
-import java.awt.desktop.QuitEvent;
-import java.awt.desktop.QuitHandler;
-import java.awt.desktop.QuitResponse;
 import java.awt.desktop.QuitStrategy;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DragGestureEvent;
@@ -100,6 +93,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuBar;
+import us.bringardner.swing.menu.StandardMenus;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -1087,6 +1081,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+		// on macOS each window's menus at the top of the screen, under the application's name
+		StandardMenus.useScreenMenuBar(APP_NAME);
 		// A GraalVM native image has no java.home, and AWT needs one (font configuration): use the
 		// folder of the executable, where the image keeps the AWT libraries.
 		if( System.getProperty("java.home") == null ) {
@@ -1155,70 +1151,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 					taskbar.setIconImage(image);
 				} catch (Throwable e) {
 				}
-				try {
-					java.awt.Desktop.getDesktop().setAboutHandler(new AboutHandler() {
-
-						@Override
-						public void handleAbout(AboutEvent e) {
-							AboutFrame frame = new AboutFrame();
-							frame.setLocationRelativeTo(null);
-							if( SwingUtilities.isEventDispatchThread()) {
-								frame.setVisible(true);
-							} else {
-								SwingUtilities.invokeLater(()->frame.setVisible(true));
-							}
-						}
-					});
-				} catch (Throwable e) {
-				}
-				try {
-					java.awt.Desktop.getDesktop().setPreferencesHandler(new PreferencesHandler() {
-
-						@Override
-						public void handlePreferences(PreferencesEvent e) {
-							SwingUtilities.invokeLater(()->actionAppearance(null));
-
-						}
-					});
-				} catch (Throwable e) {
-				}
-
-				try {
-					java.awt.Desktop.getDesktop().setQuitHandler(new QuitHandler() {
-
-						@Override
-						public void handleQuitRequestWith(QuitEvent e, QuitResponse response) {
-
-							// tell the OS not to do anything
-							response.cancelQuit();
-							int sz = runningViewers.size();
-							int i = -1;
-
-							if( sz > 1) {
-								MessageDialog dialog = new MessageDialog();
-								Response respone = dialog.showWarningDialog("This will close all of your windows."+
-										"\nAre you sure you want to quit?");
-
-								if( respone == Response.Yes) {
-									i = 0;
-								}
-							} else {
-								MessageDialog dialog = new MessageDialog();
-								Response respone = dialog.showWarningDialog("Are you sure you want to quit?");
-
-								if( respone == Response.Yes) {
-									i = 0;
-								}
-
-							}
-							if(i==0) {
-								System.exit(0);
-							} 
-						}
-					});
-				} catch (Throwable e) {
-				}
-
+				// About, Settings and Quit in the application menu: StandardMenus (installStandardMenus)
 				try {
 					java.awt.Desktop.getDesktop().setQuitStrategy(QuitStrategy.CLOSE_ALL_WINDOWS);
 				} catch (Throwable e) {
@@ -1605,15 +1538,9 @@ Panel.font = javax.swing.plaf.FontUIResource
 		this.factory = factory1;
 
 		getFrame().setIconImages(null);
-		// The screen menu bar is a Mac feature: elsewhere the menu stays in the window (and asking
-		// throws UnsupportedOperationException), so it is only taken out of the window when the
-		// desktop will show it.
-		if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Action.APP_MENU_BAR)) {
-			Desktop desktop = Desktop.getDesktop();
-			JMenuBar menuBar = getMenuBar();
-			getNorthPanel().remove(menuBar);
-			desktop.setDefaultMenuBar(menuBar);
-		}
+		// The menus every Parley application has (swing-widgets' StandardMenus): in the window's menu
+		// bar, which on macOS is at the top of the screen
+		installStandardMenus();
 
 
 		showHidden    = pref.getBoolean(PREF_SHOW_HIDDEN+"."+factory1.getTypeId(),    showHidden);
@@ -2729,6 +2656,75 @@ Panel.font = javax.swing.plaf.FontUIResource
 		});
 
 
+	}
+
+	/** The application's name: the macOS application menu and Help > About show it. */
+	static final String APP_NAME = "Parley Files Viewer";
+
+	/**
+	 * The standard menus (File, Edit, View, Window, Help, and About, Settings and Quit where the
+	 * platform has them), made of the viewer's own items:
+	 * <ul>
+	 * <li>File: New Window, New Remote Session..., New Terminal, Close, Set Start Directory...
+	 * <li>Edit: Find...
+	 * <li>View: Show Hidden Files, Show File Extensions (the same settings as the toolbar's menu),
+	 * Refresh
+	 * </ul>
+	 */
+	private void installStandardMenus() {
+		JMenuBar old = getMenuBar();
+		java.awt.Container parent = old.getParent();
+		if( parent != null ) {
+			parent.remove(old);
+			parent.revalidate();
+		}
+		StandardMenus menus = new StandardMenus(APP_NAME).about(FileSourceViewer::showAbout)
+				.settings(()->actionAppearance(getFrame())).quit(FileSourceViewer::okToQuit);
+
+		menus.file.add(menuItem(getMntmLocalBrowser(), "New Window", StandardMenus.keys(KeyEvent.VK_N, 0)));
+		menus.file.add(menuItem(getMntmRemoteBrowser(), "New Remote Session...",
+				StandardMenus.keys(KeyEvent.VK_N, StandardMenus.SHIFT)));
+		menus.file.add(menuItem(getMntmTerminal(), "New Terminal", StandardMenus.keys(KeyEvent.VK_T, StandardMenus.ALT)));
+		menus.file.addSeparator();
+		menus.file.add(menuItem(getMntmClose(), "Close", StandardMenus.keys(KeyEvent.VK_W, 0)));
+		menus.file.addSeparator();
+		menus.file.add(menuItem(getMntmStartLocation(), "Set Start Directory...", null));
+
+		menus.edit.add(menuItem(getMntmSearch(), "Find...", StandardMenus.keys(KeyEvent.VK_F, 0)));
+
+		// the toolbar's menu has these too: the same settings, so either changes both
+		JCheckBoxMenuItem hidden = new JCheckBoxMenuItem("Show Hidden Files");
+		hidden.setModel(getShowHidden().getModel());
+		JCheckBoxMenuItem extensions = new JCheckBoxMenuItem("Show File Extensions");
+		extensions.setModel(getShowExtention().getModel());
+		menus.view.add(hidden);
+		menus.view.add(extensions);
+		menus.view.addSeparator();
+		menus.view.add(StandardMenus.item("Refresh", KeyEvent.VK_R, this::refreshAll));
+
+		menus.install(getFrame());
+	}
+
+	/** One of the viewer's own items, under its standard name and shortcut. */
+	private static JMenuItem menuItem(JMenuItem item, String text, javax.swing.KeyStroke keys) {
+		item.setText(text);
+		item.setAccelerator(keys);
+		return item;
+	}
+
+	/** Help > About (on macOS, the application menu's About). */
+	static void showAbout() {
+		AboutFrame frame = new AboutFrame();
+		frame.setLocationRelativeTo(null);
+		frame.setVisible(true);
+	}
+
+	/** Quit (Exit): asks first, as the viewer always has; true to quit. */
+	static boolean okToQuit() {
+		String question = runningViewers.size() > 1
+				? "This will close all of your windows.\nAre you sure you want to quit?"
+				: "Are you sure you want to quit?";
+		return new MessageDialog().showWarningDialog(question) == Response.Yes;
 	}
 
 	protected void actionSetStartLocation() {

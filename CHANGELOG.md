@@ -16,6 +16,11 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
 
 ### Changed (no code change needed)
 
+- The menus follow the standard Parley layout (swing-widgets' `StandardMenus`), the same as
+  fsh-ide: File (New Window ⌘N, New Remote Session… ⇧⌘N, New Terminal ⌥⌘T, Close ⌘W, Set Start
+  Directory…), Edit (Find… ⌘F), View (Show Hidden Files, Show File Extensions, Refresh ⌘R),
+  Window and Help. Appearance… is now Settings… (⌘,). Each window has its own menu bar, at the top
+  of the screen on macOS, so the shortcuts work in the focused window.
 - Options > Font is now Options > Appearance... (also the Preferences item on macOS): the font and a
   color scheme, from named schemes or any one color, with a preview. It is saved and comes back at
   the next start, and changes the open windows at once. The look and the settings are shared with
