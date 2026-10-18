@@ -251,16 +251,10 @@ public class FileTableModel extends AbstractTableModel {
 		if( col == 1 ) {
 			FileSource f = files[row];
 			if( !newName.equals(f.getName())) {
-				FileSource newFile;
 				try {
-					newFile = f.getFileSourceFactory().createFileSource(newName.toString());
-					boolean ok = f.renameTo(newFile);
-					if( !ok ) {
-						MessageDialog.showErrorDialog("Could not rename "+f.getName()+" to "+newName, null);
-						
-					} else {
-						fireTableCellUpdated(row, col);					
-					}
+					// in its own folder, as the rename menu item does (not editable now, but kept right)
+					FileRename.rename(f, newName.toString());
+					fireTableCellUpdated(row, col);
 				} catch (IOException e) {
 					MessageDialog.showErrorDialog("Could not rename "+f.getName()+" to "+newName, e.toString());
 				}

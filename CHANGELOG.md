@@ -34,6 +34,9 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
   Directory..., New Folder... moves to File, and its file menu's Search... is Find....
 - Edit With... works: it chose nothing before. Backup, which did what Copy does, is gone.
 - In a text field, Edit > Copy, Paste and Delete act on the text, not the files.
+- Both viewers start in the same folder: Start Here Next Time and Set Start Directory... in either
+  set it for both (the JavaFX viewer's own setting, if any, is moved over once).
+
 - The menus follow the standard Parley layout (swing-widgets' `StandardMenus`), the same as
   fsh-ide: File (New Window ⌘N, New Remote Session… ⇧⌘N, New Terminal ⌥⌘T, Close ⌘W, Set Start
   Directory…), Edit (Find… ⌘F), View (Show Hidden Files, Show File Extensions, Refresh ⌘R),
@@ -53,6 +56,13 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
 - "Open terminal" uses [fsh](https://github.com/parley-project/parley-fsh).
 - On macOS the applications that can open a file come from Launch Services through JNA, so there
   is no native library to build or to put on `java.library.path`.
+
+### Fixed
+
+- Rename in the Swing viewer moved the file to the folder the viewer started in (the name was
+  taken as relative to the file system's current folder, not the file's): the file now stays in
+  its own folder, as in the JavaFX viewer, and a name with a separator or one already taken is
+  refused.
 
 ### Requirements
 

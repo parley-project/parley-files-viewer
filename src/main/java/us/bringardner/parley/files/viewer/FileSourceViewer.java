@@ -1223,13 +1223,10 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 
 				//If a string was returned, say so.
-				if ((s != null) && (s.length() > 0) && !name.equals(s)) {
+				if ((s != null) && (s.trim().length() > 0) && !name.equals(s.trim())) {
 					try {
-						FileSource newFile = f.getFileSourceFactory().createFileSource(s);
-						if( !f.renameTo(newFile)) {
-							showError("Could not rename "+name+" to "+s, null);
-
-						}
+						// in the file's own folder (it was moved to the factory's current folder)
+						FileRename.rename(f, s);
 					} catch (HeadlessException | IOException e) {
 						showError("Could not rename "+name+" to "+s, e);					
 					}

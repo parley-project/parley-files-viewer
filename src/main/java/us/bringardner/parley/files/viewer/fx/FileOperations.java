@@ -68,22 +68,7 @@ final class FileOperations {
 
 	/** Renames file within its own folder. */
 	static FileSource rename(FileSource file, String newName) throws IOException {
-		String name = newName.trim();
-		if( name.isEmpty() || name.indexOf('/') >= 0 || name.indexOf(file.getFileSourceFactory().getSeparatorChar()) >= 0 ) {
-			throw new IOException("\""+newName+"\" isn't a name");
-		}
-		FileSource parent = file.getParentFile();
-		if( parent == null ) {
-			throw new IOException("Can't rename "+file.getAbsolutePath());
-		}
-		FileSource dest = parent.getChild(name);
-		if( dest.exists()) {
-			throw new IOException(name+" already exists in "+parent.getAbsolutePath());
-		}
-		if( !file.renameTo(dest)) {
-			throw new IOException("Can't rename "+file.getName()+" to "+name);
-		}
-		return dest;
+		return us.bringardner.parley.files.viewer.FileRename.rename(file, newName);
 	}
 
 	/** Makes the folder name in dir. */
