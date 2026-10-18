@@ -25,6 +25,7 @@
  */
 package us.bringardner.parley.files.viewer;
 
+import us.bringardner.swing.gradient.Theme;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
@@ -1076,7 +1077,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		} catch (IOException e) {
 			// the rows keep their old height until the folder is opened again
 		}
-		getTableScrollPane().getColumnHeader().setBackground(GradientColors.getEnd());
+		getTableScrollPane().getColumnHeader().setBackground(Theme.current().getHeader());
 	}
 
 	/**
@@ -1231,7 +1232,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 					viewer.setup(FileSourceFactory.getDefaultFactory(),true);
 					viewer.show();
 					SwingUtilities.invokeLater(()->{
-						viewer.getTableScrollPane().getColumnHeader().setBackground(GradientColors.getEnd());
+						viewer.getTableScrollPane().getColumnHeader().setBackground(Theme.current().getHeader());
 						viewer.getTableScrollPane().getColumnHeader().setOpaque(false);
 					});
 					//dotest(viewer);

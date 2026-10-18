@@ -20,6 +20,9 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
   color scheme, from named schemes or any one color, with a preview. It is saved and comes back at
   the next start, and changes the open windows at once. The look and the settings are shared with
   the other Parley applications through swing-widgets.
+- Themes: Gold (as before), Dark, Light and the color themes, or one made from any color, in
+  Options > Appearance... The table, tree, selection, header and search window colors come from the
+  theme, so a dark theme reads as well as a light one; selected rows use the theme's selection color.
 - The window and Dock icons are the Parley app icon with a folder badge, from
   [parley-brand](https://github.com/parley-project/parley-brand), in every size from 16 to 512 px.
 - The viewer is an example application built on Parley, not part of the library, so it is no longer

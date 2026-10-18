@@ -25,7 +25,6 @@
  */
 package us.bringardner.parley.files.viewer;
 
-import us.bringardner.swing.gradient.GradientColors;
 import us.bringardner.parley.brand.ParleyBrand;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -365,7 +364,7 @@ public class FileSourceViewerBase {
         northPanel.add(copyProgressPanel, BorderLayout.NORTH);
         
         JPanel panel_1 = new JPanel();
-        panel_1.setBackground(GradientColors.getStart());
+        panel_1.setOpaque(false);
         northPanel.add(panel_1, BorderLayout.WEST);
         menuBar = new JMenuBar();
         panel_1.add(menuBar, BorderLayout.WEST);
@@ -420,7 +419,6 @@ public class FileSourceViewerBase {
         
         
         JPanel panel_2 = new JPanel();
-        panel_2.setBackground(Color.MAGENTA);
         panel_2.setOpaque(false);
         panel_1.add(panel_2);
         panel_2.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
