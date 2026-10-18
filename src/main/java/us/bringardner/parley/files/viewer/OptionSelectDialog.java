@@ -84,8 +84,9 @@ public class OptionSelectDialog extends JDialog {
 
 	private final JPanel contentPanel = new GradientPanel(3);
 	private Icon icon = MessageIcon;	
-	Color startColor = new Color(242, 206, 113);
-	Color endColor = new Color(150, 123, 40);
+	/** null: the current theme's */
+	Color startColor;
+	Color endColor;
 	
 	private boolean canceled=false;
 	private String message="";
@@ -150,8 +151,10 @@ public class OptionSelectDialog extends JDialog {
 
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
-		contentPanel.setBackground(startColor);
-		contentPanel.setForeground(endColor);
+		if( startColor != null ) {
+			contentPanel.setBackground(startColor);
+			contentPanel.setForeground(endColor);
+		}
 
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
 		contentPanel.setLayout(new BorderLayout(0, 0));
@@ -215,8 +218,10 @@ public class OptionSelectDialog extends JDialog {
 		scrollPane.setViewportView(table);
 		
 		GradientPanel panel = new GradientPanel(GradientPanel.DIAGONAL_RIGHT);
-		panel.setBackground(startColor);
-		panel.setForeground(endColor);
+		if( startColor != null ) {
+			panel.setBackground(startColor);
+			panel.setForeground(endColor);
+		}
 
 		contentPanel.add(panel, BorderLayout.SOUTH);
 		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
@@ -290,8 +295,10 @@ public class OptionSelectDialog extends JDialog {
 		{
 			JPanel buttonPanel = new GradientPanel(GradientPanel.DIAGONAL_RIGHT);
 			buttonPanel.setOpaque(false);
-			buttonPanel.setBackground(contentPanel.getBackground());
-			buttonPanel.setForeground(contentPanel.getForeground());
+			if( startColor != null ) {
+				buttonPanel.setBackground(startColor);
+				buttonPanel.setForeground(endColor);
+			}
 			buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
 			getContentPane().add(buttonPanel, BorderLayout.SOUTH);
 			{
