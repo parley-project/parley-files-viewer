@@ -1072,10 +1072,13 @@ Panel.font = javax.swing.plaf.FontUIResource
 		getTable().setFont(f);
 		getTree().setFont(f);
 		setRowSize();
-		try {
-			((FileTableModel) getTable().getModel()).resetIFile();
-		} catch (IOException e) {
-			// the rows keep their old height until the folder is opened again
+		// before a folder is opened the table has no FileTableModel yet
+		if( getTable().getModel() instanceof FileTableModel ) {
+			try {
+				((FileTableModel) getTable().getModel()).resetIFile();
+			} catch (IOException e) {
+				// the rows keep their old height until the folder is opened again
+			}
 		}
 		getTableScrollPane().getColumnHeader().setBackground(Theme.current().getHeader());
 	}
