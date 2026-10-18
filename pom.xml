@@ -104,6 +104,20 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<!-- A JVM per test class: on macOS, JavaFX can't start in a JVM where Swing (AWT)
+					     is already running, so the JavaFX viewer's tests can't share one with the
+					     Swing viewer's -->
+					<reuseForks>false</reuseForks>
+					<!-- JavaFX unpacks its native libraries under user.home; keep them in target -->
+					<systemPropertyVariables>
+						<javafx.cachedir>${project.build.directory}/javafx-cache</javafx.cachedir>
+					</systemPropertyVariables>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
@@ -165,6 +179,21 @@
 			<groupId>us.bringardner</groupId>
 			<artifactId>fsh</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+
+		<!-- The JavaFX viewer (us.bringardner.parley.files.viewer.fx, started by Launcher): JavaFX,
+		     and parley-files-fx's folder tree, file table, path bar and connection dialog -->
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-controls</artifactId>
+			<!-- 17 LTS, as fsh-ide and fx-widgets use -->
+			<version>17.0.20</version>
+		</dependency>
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-files-fx</artifactId>
+			<!-- 1.1.0: its dialogs follow the gradient look -->
+			<version>1.1.0-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

@@ -16,6 +16,9 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
 
 ### Changed (no code change needed)
 
+- The JavaFX viewer (`us.bringardner.parley.files.viewer.fx`, started by `Launcher`) is part of this
+  project, as the JavaFX IDE is part of fsh-ide. It was the separate parley-files-viewer-fx
+  project; it now needs JavaFX 17 LTS and parley-files-fx 1.1.0.
 - The menus follow the standard Parley layout (swing-widgets' `StandardMenus`), the same as
   fsh-ide: File (New Window ⌘N, New Remote Session… ⇧⌘N, New Terminal ⌥⌘T, Close ⌘W, Set Start
   Directory…), Edit (Find… ⌘F), View (Show Hidden Files, Show File Extensions, Refresh ⌘R),
