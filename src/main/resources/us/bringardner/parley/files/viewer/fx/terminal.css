@@ -1,0 +1,25 @@
+/* The terminal: fsh-ide's console styles, light, or dark with a dark theme */
+/* (the font family is set in code: JavaFX CSS takes one family, not a list) */
+.console {
+	-fx-font-weight: normal;
+	-fx-font-style: normal;
+	-fx-background-color: white;
+	-fx-padding: 4 6 4 6;
+}
+.console .text { -fx-fill: black; }
+.console .error { -fx-fill: #c62828; }
+.console .prompt { -fx-fill: #555555; }
+.theme-dark .console {
+	-fx-background-color: #0E0D0B;
+}
+.theme-dark .console .text {
+	-fx-fill: #E8E2D0;
+}
+.theme-dark .console .caret {
+	-fx-stroke: #D0AA42;
+}
+.theme-dark .console .selection {
+	-fx-fill: #5A4818;
+}
+.theme-dark .console .error  { -fx-fill: #E06C5A; }
+.theme-dark .console .prompt { -fx-fill: #A39B85; }
