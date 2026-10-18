@@ -157,6 +157,7 @@ public final class FxCertificateValidator implements CertificateValidator {
 			dialog.initOwner(w);
 		}
 		dialog.setResizable(true);
+		FxLook.apply(dialog);
 
 		VBox content = new VBox(10);
 		content.setPadding(new Insets(4));

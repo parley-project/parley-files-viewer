@@ -54,6 +54,11 @@ mvn -o compile exec:java -Dexec.mainClass=us.bringardner.parley.files.viewer.fx.
 
 An optional argument is the folder to start in.
 
+It looks like the Swing viewer: fx-widgets' gradient look, the Parley icon with the folder badge,
+and the same menus (File, Edit, View, Window and Help, with About, Settings… and Quit in the
+application menu on macOS). Settings… (fx-widgets' `SettingsDialog`) chooses the theme and font;
+they are kept with the Swing viewer's, so both viewers look the same.
+
 ### What it does
 
 - Folder tree, path bar, back / forward / up, and the files of the folder (name, date, size).
@@ -102,8 +107,7 @@ or FTPS server, say) ask first, in a JavaFX dialog, instead of failing:
 
 ### Not yet ported from the Swing viewer
 
-The external application chooser (registry), the terminal,
-font and theme settings.
+The external application chooser (registry) and the terminal.
 
 ## Building
 
