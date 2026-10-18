@@ -99,7 +99,7 @@ final class TransferWindow {
 		HBox.setHgrow(gap, Priority.ALWAYS);
 		VBox box = new VBox(8, what, bar, new HBox(gap, cancel));
 		box.setPadding(new Insets(12));
-		stage.setScene(new Scene(box));
+		stage.setScene(FxLook.apply(stage, new Scene(box)));
 		stage.setOnCloseRequest(e->task.cancel(true));
 
 		// shown only if it takes a while
@@ -149,6 +149,7 @@ final class TransferWindow {
 		if( owner != null ) {
 			alert.initOwner(owner);
 		}
+		FxLook.apply(alert);
 		alert.showAndWait();
 	}
 }

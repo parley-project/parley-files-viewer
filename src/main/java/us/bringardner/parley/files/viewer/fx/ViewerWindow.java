@@ -36,6 +36,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
+import us.bringardner.fx.menu.StandardMenus;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
@@ -139,7 +140,7 @@ public class ViewerWindow {
 		wireNavigation();
 		wireTable();
 
-		this.stage.setScene(new Scene(root, 1000, 640));
+		this.stage.setScene(FxLook.apply(this.stage, new Scene(root, 1000, 640)));
 		CopyQueue.shared().addListener(refresher);
 		this.stage.setOnHidden(e->{
 			CopyQueue.shared().removeListener(refresher);
@@ -162,15 +163,22 @@ public class ViewerWindow {
 
 	// ---------------------------------------------------------------- building
 
+	/**
+	 * The menus, laid out as in every Parley application (fx-widgets' StandardMenus) and as in the
+	 * Swing viewer: File, Edit, View, Window and Help, with About, Settings... and Quit in the
+	 * application menu on macOS and in File and Help elsewhere.
+	 */
 	private MenuBar buildMenuBar() {
-		Menu file = new Menu("File");
+		StandardMenus menus = new StandardMenus(FxLook.APP_NAME).about(this::showAbout).settings(this::showSettings)
+				.quit(ViewerWindow::okToQuit);
+		Menu file = menus.file;
 		MenuItem newWindow = item("New Window", new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN), this::newWindow);
-		MenuItem connect = item("Connect to...", null, this::connectTo);
+		MenuItem connect = item("New Remote Session...", null, this::connectTo);
 		MenuItem open = item("Open", new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN), this::openSelected);
 		MenuItem edit = item("Edit", new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN), this::editSelected);
-		MenuItem search = item("Search...", new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), this::search);
+		MenuItem search = item("Find...", new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), this::search);
 		MenuItem startHere = item("Start Here Next Time", null, this::setStartLocation);
-		MenuItem close = item("Close Window", new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN), stage::close);
+		MenuItem close = item("Close", new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN), stage::close);
 		file.getItems().addAll(newWindow, connect);
 		try {
 			recent = new RecentFileMenu(ViewerWindow.class);
@@ -179,10 +187,10 @@ public class ViewerWindow {
 		} catch (IOException e) {
 			// the menu is a convenience: the viewer works without it
 		}
-		file.getItems().addAll(new SeparatorMenuItem(), open, edit, search, new SeparatorMenuItem(), startHere,
+		file.getItems().addAll(new SeparatorMenuItem(), open, edit, new SeparatorMenuItem(), startHere,
 				new SeparatorMenuItem(), close);
 
-		Menu editMenu = new Menu("Edit");
+		Menu editMenu = menus.edit;
 		pasteItem.setAccelerator(new KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN));
 		pasteItem.setOnAction(e->paste());
 		editMenu.getItems().addAll(
@@ -191,16 +199,61 @@ public class ViewerWindow {
 				new SeparatorMenuItem(),
 				item("New Folder...", new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN), this::newFolder),
 				item("Rename...", new KeyCodeCombination(KeyCode.F2), this::renameSelected),
-				item("Delete", new KeyCodeCombination(KeyCode.DELETE), this::deleteSelected));
+				item("Delete", new KeyCodeCombination(KeyCode.DELETE), this::deleteSelected),
+				new SeparatorMenuItem(), search);
 
-		Menu view = new Menu("View");
+		Menu view = menus.view;
 		CheckMenuItem hidden = new CheckMenuItem("Show Hidden Files");
 		hidden.selectedProperty().bindBidirectional(table.showHiddenProperty());
 		CheckMenuItem extensions = new CheckMenuItem("Show File Extensions");
 		extensions.selectedProperty().bindBidirectional(table.showExtensionsProperty());
 		view.getItems().addAll(hidden, extensions, new SeparatorMenuItem(),
 				item("Refresh", new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN), this::refresh));
-		return new MenuBar(file, editMenu, view);
+		return menus.build(stage);
+	}
+
+	/** Help > About (the application menu on macOS). */
+	private void showAbout() {
+		Package p = ViewerWindow.class.getPackage();
+		String version = p == null ? null : p.getImplementationVersion();
+		Alert a = new Alert(AlertType.INFORMATION, "Browse, copy, search and edit files on any parley-files file system:"
+				+ " local, memory, FTP, SFTP and JDBC.\n\nAn example of what Parley can help you build."
+				+ "\nhttps://github.com/parley-project", ButtonType.OK);
+		a.initOwner(stage);
+		a.setTitle("About " + FxLook.APP_NAME);
+		a.setHeaderText(FxLook.APP_NAME + (version == null ? "" : " " + version));
+		List<javafx.scene.image.Image> icons = FxLook.appIcons();
+		if( icons.size() > 3 ) {
+			javafx.scene.image.ImageView logo = new javafx.scene.image.ImageView(icons.get(3));
+			logo.setFitWidth(64);
+			logo.setFitHeight(64);
+			a.setGraphic(logo);
+		}
+		FxLook.apply(a);
+		a.showAndWait();
+	}
+
+	/** Settings...: the theme and font, shared with the Swing viewer and the other Parley applications. */
+	private void showSettings() {
+		us.bringardner.fx.dialog.SettingsDialog.showDialog(stage, FxLook.prefs());
+	}
+
+	/**
+	 * Quit: asks first while files are being copied (stopping would leave them half copied), then
+	 * closes every window.
+	 */
+	static boolean okToQuit() {
+		if( CopyQueue.shared().isBusy() ) {
+			Alert a = new Alert(AlertType.CONFIRMATION, "Files are still being copied. Quit and stop copying them?",
+					ButtonType.CANCEL, ButtonType.OK);
+			a.setHeaderText("Quit " + FxLook.APP_NAME + "?");
+			FxLook.apply(a);
+			if( a.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK ) {
+				return false;
+			}
+			CopyQueue.shared().cancelAll();
+		}
+		return true;
 	}
 
 	private static MenuItem item(String text, KeyCombination accelerator, Runnable action) {
@@ -607,6 +660,8 @@ public class ViewerWindow {
 					"The copy of "+remote.getName()+" has changed.\nReplace the original file?",
 					ButtonType.YES, ButtonType.NO);
 			a.initOwner(stage);
+		FxLook.apply(a);
+			FxLook.apply(a);
 			answer.complete(a.showAndWait().orElse(ButtonType.NO) == ButtonType.YES);
 		});
 		try {
@@ -681,6 +736,8 @@ public class ViewerWindow {
 					replace, replaceAll, skip, skipAll, ButtonType.CANCEL);
 			a.setHeaderText("Replace it?");
 			a.initOwner(stage);
+		FxLook.apply(a);
+			FxLook.apply(a);
 			ButtonType r = a.showAndWait().orElse(ButtonType.CANCEL);
 			answer.complete(r == replace ? CopyPlanner.Answer.REPLACE
 					: r == replaceAll ? CopyPlanner.Answer.REPLACE_ALL
@@ -737,6 +794,7 @@ public class ViewerWindow {
 		}
 		TextInputDialog d = new TextInputDialog("New Folder");
 		d.initOwner(stage);
+		FxLook.apply(d);
 		d.setTitle("New Folder");
 		d.setHeaderText("Name of the new folder in "+dir.getAbsolutePath());
 		d.showAndWait().ifPresent(name->TransferWindow.<FileSource>run(stage, "New Folder",
@@ -761,6 +819,7 @@ public class ViewerWindow {
 		FileSource file = files.get(0);
 		TextInputDialog d = new TextInputDialog(file.getName());
 		d.initOwner(stage);
+		FxLook.apply(d);
 		d.setTitle("Rename");
 		d.setHeaderText("New name for "+file.getName());
 		d.showAndWait().ifPresent(name->{
@@ -791,6 +850,7 @@ public class ViewerWindow {
 				: files.size()+" items (and everything in any folder)";
 		Alert a = new Alert(AlertType.CONFIRMATION, "Delete "+what+"?", ButtonType.YES, ButtonType.NO);
 		a.initOwner(stage);
+		FxLook.apply(a);
 		a.setHeaderText("Delete");
 		if( a.showAndWait().orElse(ButtonType.NO) != ButtonType.YES ) {
 			return;

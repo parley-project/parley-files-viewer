@@ -195,6 +195,12 @@
 			<!-- 1.1.0: its dialogs follow the gradient look -->
 			<version>1.1.0-SNAPSHOT</version>
 		</dependency>
+		<!-- The JavaFX viewer's look, menus and Settings, the twins of swing-widgets' -->
+		<dependency>
+			<groupId>us.bringardner</groupId>
+			<artifactId>bringardner-fx-widgets</artifactId>
+			<version>1.1.0-SNAPSHOT</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.miglayout</groupId>

@@ -192,7 +192,7 @@ public class SearchWindow {
 		BorderPane root = new BorderPane(table);
 		root.setTop(top);
 		root.setBottom(bottom);
-		stage.setScene(new Scene(root, 860, 520));
+		stage.setScene(FxLook.apply(stage, new Scene(root, 860, 520)));
 		stage.setOnHidden(e->{
 			if( cancel != null ) {
 				cancel.set(true);

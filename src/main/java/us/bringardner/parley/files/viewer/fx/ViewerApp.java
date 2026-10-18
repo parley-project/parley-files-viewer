@@ -30,6 +30,9 @@ public class ViewerApp extends Application {
 
 	@Override
 	public void start(Stage stage) throws Exception {
+		// the theme and font chosen in Settings (the Swing viewer's too), and the Parley icon
+		us.bringardner.fx.dialog.SettingsDialog.load(FxLook.prefs());
+		FxLook.dockIcon();
 		// connections to servers whose certificate nothing trusts ask here
 		FxCertificateValidator certificates = FxCertificateValidator.install();
 		certificates.setOwner(stage);
