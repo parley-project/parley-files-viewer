@@ -22,7 +22,6 @@
 	<properties>
 		<!-- Written to the jar manifest as Automatic-Module-Name -->
 		<parley.moduleName>us.bringardner.parley.files.viewer</parley.moduleName>
-		<flatlaf.version>3.5.4</flatlaf.version>
 		<jna.version>5.19.1</jna.version>
 	</properties>
 
@@ -140,7 +139,8 @@
 			<groupId>us.bringardner.parley</groupId>
 			<!-- the file chooser, connection dialog, drag and drop and progress monitor -->
 			<artifactId>parley-files-swing</artifactId>
-			<version>1.0.0</version>
+			<!-- 1.1.0: its dialogs follow the gradient look -->
+			<version>1.1.0-SNAPSHOT</version>
 		</dependency>
 		<!-- brings its own maintained JSch (same com.jcraft.jsch packages), so the old
 		     com.jcraft:jsch 0.1.54 is no longer listed here -->
@@ -158,7 +158,7 @@
 		<dependency>
 			<groupId>us.bringardner</groupId>
 			<artifactId>bringardner-swing-widgets</artifactId>
-			<version>1.0.0</version>
+			<version>1.1.0-SNAPSHOT</version>
 		</dependency>
 		<!-- The "Open terminal" action uses fsh's Console; was bjl_shell (BjlShell) -->
 		<dependency>
@@ -167,41 +167,6 @@
 			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
-		<dependency>
-			<groupId>com.formdev</groupId>
-			<artifactId>flatlaf</artifactId>
-			<version>${flatlaf.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.formdev</groupId>
-			<artifactId>flatlaf-intellij-themes</artifactId>
-			<version>${flatlaf.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.formdev</groupId>
-			<artifactId>flatlaf-extras</artifactId>
-			<version>${flatlaf.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.formdev</groupId>
-			<artifactId>flatlaf-fonts-inter</artifactId>
-			<version>4.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.formdev</groupId>
-			<artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
-			<version>2.304</version>
-		</dependency>
-		<dependency>
-			<groupId>com.formdev</groupId>
-			<artifactId>flatlaf-fonts-roboto</artifactId>
-			<version>2.137</version>
-		</dependency>
-		<dependency>
-			<groupId>com.formdev</groupId>
-			<artifactId>flatlaf-fonts-roboto-mono</artifactId>
-			<version>3.000</version>
-		</dependency>
 		<dependency>
 			<groupId>com.miglayout</groupId>
 			<artifactId>miglayout-swing</artifactId>
