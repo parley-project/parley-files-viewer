@@ -2267,9 +2267,10 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 		tree.setCellRenderer(new DefaultTreeCellRenderer() {
 			private static final long serialVersionUID = 1L;
-			private Icon closedIcon = new ImageIcon(getClass().getResource(ICON_LOCATION+"/folder_closed_20.png"));
-			private Icon notReadableIcon = new ImageIcon(getClass().getResource(ICON_LOCATION+"/folder_closed_not_readable_20.png"));
-			private Icon openIcon = new ImageIcon(getClass().getResource(ICON_LOCATION+"/folder_opened_20.png"));
+			// folders in the theme's colors, as in the JavaFX viewer
+			private Icon closedIcon = FileTableModel.dirIcon;
+			private Icon notReadableIcon = FileTableModel.dirIconNoRead;
+			private Icon openIcon = new us.bringardner.swing.gradient.FolderIcon(20, us.bringardner.swing.gradient.FolderIcon.Kind.OPEN);
 			private Icon emptyIcon = closedIcon;
 
 
