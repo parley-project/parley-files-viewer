@@ -31,12 +31,9 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
@@ -45,7 +42,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
@@ -87,7 +83,6 @@ public class FileSourceViewerBase {
 	private JPanel northPanel;
 	private JButton testButton;
 	private CopyProgressPanel copyProgressPanel;
-	private JButton btnNewButton;
 	private JSeparator separator;
 	private JSeparator separator_1;
 	private JMenuItem mntmStartLocation;
@@ -418,25 +413,9 @@ public class FileSourceViewerBase {
         showExtentionsCheckItem.setSelected(true);
         
         
-        JPanel panel_2 = new JPanel();
-        panel_2.setOpaque(false);
-        panel_1.add(panel_2);
-        panel_2.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-        
-        JPopupMenu popup = new JPopupMenu("Options");
-		popup.add(getShowExtention());
-		popup.add(getShowHidden());
-        btnNewButton = new JButton("");
-        btnNewButton.setFocusPainted(false);
-        btnNewButton.addActionListener(new ActionListener() {
-        	public void actionPerformed(ActionEvent e) {
-        		popup.show(btnNewButton, btnNewButton.getWidth()/2, btnNewButton.getHeight()/2);
-        	}
-        });
-        btnNewButton.setIcon(new ImageIcon(FileSourceViewerBase.class.getResource("/us/bringardner/parley/files/viewer/icons/Globe25x25.png")));
-        btnNewButton.setBorderPainted(false);
-        panel_2.add(btnNewButton);
-        
+        // (the globe button and its menu of Show Hidden Files and Show File Extensions are gone: the
+        // View menu has them, sharing these check items' models)
+
         
         JPanel panel = new JPanel();
         contentPane.add(panel, BorderLayout.SOUTH);
