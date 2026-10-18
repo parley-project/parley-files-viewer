@@ -23,6 +23,9 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
   Settings… (fx-widgets' SettingsDialog, shared with the Swing viewer), the Parley icon, and the
   standard menus. Connect to... is now File > New Remote Session..., Search... is Edit > Find...,
   and there are About, Settings…, Window and Quit; Quit asks while files are being copied.
+- The JavaFX viewer has the Swing viewer's Open With... (the applications registered for a file,
+  with their icons, or any other) and terminal (File > New Terminal, ⌥⌘T, and New Terminal Here:
+  an fsh shell in a folder of any file system). The pom gains RichTextFX for the terminal.
 - The menus follow the standard Parley layout (swing-widgets' `StandardMenus`), the same as
   fsh-ide: File (New Window ⌘N, New Remote Session… ⇧⌘N, New Terminal ⌥⌘T, Close ⌘W, Set Start
   Directory…), Edit (Find… ⌘F), View (Show Hidden Files, Show File Extensions, Refresh ⌘R),

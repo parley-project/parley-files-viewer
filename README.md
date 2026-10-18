@@ -105,9 +105,15 @@ or FTPS server, say) ask first, in a JavaFX dialog, instead of failing:
 
 `FxCertificateValidator.install()` does the wiring; `ViewerApp` calls it at start.
 
-### Not yet ported from the Swing viewer
+### Open With and the terminal
 
-The external application chooser (registry) and the terminal.
+- File > Open With... (and the file list's menu) lists the applications this computer has for the
+  file, with their icons (the Swing viewer's registry: Launch Services on macOS, the registry on
+  Windows), and Other Application... picks any other. A remote file is opened as a copy, and
+  changes to it are offered to be sent back, as Edit does.
+- File > New Terminal (⌥⌘T) opens an fsh shell in the folder shown, on any file system, local or
+  remote; New Terminal Here (the file list's menu) opens it in the folder selected. "exit" closes
+  the window, and closing the window ends the shell.
 
 ## Building
 

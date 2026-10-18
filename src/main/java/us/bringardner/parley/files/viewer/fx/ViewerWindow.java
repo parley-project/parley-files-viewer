@@ -55,6 +55,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.FileSourceFactory;
 import us.bringardner.parley.files.browse.FileEntry;
@@ -169,17 +170,20 @@ public class ViewerWindow {
 	 * application menu on macOS and in File and Help elsewhere.
 	 */
 	private MenuBar buildMenuBar() {
-		StandardMenus menus = new StandardMenus(FxLook.APP_NAME).about(this::showAbout).settings(this::showSettings)
+		StandardMenus menus = new StandardMenus(FxLook.APP_NAME).about(()->showAbout(stage)).settings(()->showSettings(stage))
 				.quit(ViewerWindow::okToQuit);
 		Menu file = menus.file;
 		MenuItem newWindow = item("New Window", new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN), this::newWindow);
 		MenuItem connect = item("New Remote Session...", null, this::connectTo);
 		MenuItem open = item("Open", new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN), this::openSelected);
+		MenuItem openWith = item("Open With...", null, this::openWithSelected);
 		MenuItem edit = item("Edit", new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN), this::editSelected);
+		MenuItem terminal = item("New Terminal", new KeyCodeCombination(KeyCode.T, KeyCombination.SHORTCUT_DOWN,
+				KeyCombination.ALT_DOWN), ()->newTerminal(history.current()));
 		MenuItem search = item("Find...", new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), this::search);
 		MenuItem startHere = item("Start Here Next Time", null, this::setStartLocation);
 		MenuItem close = item("Close", new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN), stage::close);
-		file.getItems().addAll(newWindow, connect);
+		file.getItems().addAll(newWindow, connect, terminal);
 		try {
 			recent = new RecentFileMenu(ViewerWindow.class);
 			recent.setOnOpened(this::openRecent);
@@ -187,7 +191,7 @@ public class ViewerWindow {
 		} catch (IOException e) {
 			// the menu is a convenience: the viewer works without it
 		}
-		file.getItems().addAll(new SeparatorMenuItem(), open, edit, new SeparatorMenuItem(), startHere,
+		file.getItems().addAll(new SeparatorMenuItem(), open, openWith, edit, new SeparatorMenuItem(), startHere,
 				new SeparatorMenuItem(), close);
 
 		Menu editMenu = menus.edit;
@@ -212,14 +216,14 @@ public class ViewerWindow {
 		return menus.build(stage);
 	}
 
-	/** Help > About (the application menu on macOS). */
-	private void showAbout() {
+	/** Help > About (the application menu on macOS), from any of the viewer's windows. */
+	static void showAbout(Window owner) {
 		Package p = ViewerWindow.class.getPackage();
 		String version = p == null ? null : p.getImplementationVersion();
 		Alert a = new Alert(AlertType.INFORMATION, "Browse, copy, search and edit files on any parley-files file system:"
 				+ " local, memory, FTP, SFTP and JDBC.\n\nAn example of what Parley can help you build."
 				+ "\nhttps://github.com/parley-project", ButtonType.OK);
-		a.initOwner(stage);
+		a.initOwner(owner);
 		a.setTitle("About " + FxLook.APP_NAME);
 		a.setHeaderText(FxLook.APP_NAME + (version == null ? "" : " " + version));
 		List<javafx.scene.image.Image> icons = FxLook.appIcons();
@@ -234,8 +238,8 @@ public class ViewerWindow {
 	}
 
 	/** Settings...: the theme and font, shared with the Swing viewer and the other Parley applications. */
-	private void showSettings() {
-		us.bringardner.fx.dialog.SettingsDialog.showDialog(stage, FxLook.prefs());
+	static void showSettings(Window owner) {
+		us.bringardner.fx.dialog.SettingsDialog.showDialog(owner, FxLook.prefs());
 	}
 
 	/**
@@ -301,7 +305,9 @@ public class ViewerWindow {
 	private void wireTable() {
 		ContextMenu menu = new ContextMenu(
 				item("Open", null, this::openSelected),
+				item("Open With...", null, this::openWithSelected),
 				item("Edit", null, this::editSelected),
+				item("New Terminal Here", null, this::terminalHere),
 				item("Search...", null, this::search),
 				new SeparatorMenuItem(),
 				item("Copy", null, this::copySelected),
@@ -591,6 +597,76 @@ public class ViewerWindow {
 				});
 	}
 
+	/** Open With... on the selected file. */
+	private void openWithSelected() {
+		for(FileEntry e : table.getSelectedEntries()) {
+			if( !e.isDirectory()) {
+				openWith(e.getFile());
+				return;
+			}
+		}
+	}
+
+	/**
+	 * Open With...: the applications this computer has for the file, or another; a remote file is
+	 * downloaded, and changes to the copy are offered to be sent back (as Edit does).
+	 */
+	void openWith(FileSource file) {
+		TransferWindow.<List<us.bringardner.parley.files.viewer.IRegistry.RegData>>run(stage, "Open With",
+				progress->OpenWithDialog.appsFor(file.getName()),
+				apps->{
+					OpenWithDialog.Choice choice = OpenWithDialog.choose(stage, file.getName(), apps);
+					if( choice != null ) {
+						openWith(file, choice);
+					}
+				},
+				error->{
+					if( error != null ) {
+						TransferWindow.showError(stage, "Can't open "+file.getName(), error);
+					}
+				});
+	}
+
+	private void openWith(FileSource file, OpenWithDialog.Choice choice) {
+		TransferWindow.<File>run(stage, "Download "+file.getName(),
+				progress->FileOperations.localCopy(file),
+				local->{
+					try {
+						Process p = new ProcessBuilder(choice.command(local.getAbsolutePath())).redirectErrorStream(true).start();
+						if( !FileOperations.isLocal(file)) {
+							monitor(file, local, p);
+						}
+					} catch (IOException e) {
+						TransferWindow.showError(stage, "Can't open "+file.getName()+" with "+choice, e);
+					}
+				},
+				error->{
+					if( error != null ) {
+						TransferWindow.showError(stage, "Can't open "+file.getName(), error);
+					}
+				});
+	}
+
+	/** New Terminal Here: a terminal in the selected folder, or the one shown. */
+	private void terminalHere() {
+		for(FileEntry e : table.getSelectedEntries()) {
+			if( e.isDirectory()) {
+				newTerminal(e.getFile());
+				return;
+			}
+		}
+		newTerminal(history.current());
+	}
+
+	/** File > New Terminal: an fsh shell in a folder (of any file system), in its own window. */
+	void newTerminal(FileSource dir) {
+		try {
+			new TerminalWindow(dir).show();
+		} catch (IOException | RuntimeException e) {
+			TransferWindow.showError(stage, "Can't open a terminal", e);
+		}
+	}
+
 	private void editSelected() {
 		for(FileEntry e : table.getSelectedEntries()) {
 			if( !e.isDirectory()) {
@@ -660,7 +736,6 @@ public class ViewerWindow {
 					"The copy of "+remote.getName()+" has changed.\nReplace the original file?",
 					ButtonType.YES, ButtonType.NO);
 			a.initOwner(stage);
-		FxLook.apply(a);
 			FxLook.apply(a);
 			answer.complete(a.showAndWait().orElse(ButtonType.NO) == ButtonType.YES);
 		});
@@ -736,7 +811,6 @@ public class ViewerWindow {
 					replace, replaceAll, skip, skipAll, ButtonType.CANCEL);
 			a.setHeaderText("Replace it?");
 			a.initOwner(stage);
-		FxLook.apply(a);
 			FxLook.apply(a);
 			ButtonType r = a.showAndWait().orElse(ButtonType.CANCEL);
 			answer.complete(r == replace ? CopyPlanner.Answer.REPLACE
