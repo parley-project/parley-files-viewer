@@ -84,6 +84,16 @@ public class ViewerLookTest {
 			assertTrue(GradientLook.isApplied(stage), "the gradient look");
 			assertFalse(stage.getIcons().isEmpty(), "the Parley icon");
 			MenuBar bar = (MenuBar) stage.getScene().getRoot().lookup(".menu-bar");
+			// File, Edit and View: the same as the Swing viewer's
+			boolean canPrint = ViewerWindow.canPrint();
+			List<String> file = names(bar.getMenus().get(0));
+			if( !StandardMenus.isMac() ) {
+				file = file.subList(0, file.indexOf("Close") + 1);
+			}
+			assertEquals(us.bringardner.parley.files.viewer.test.TestViewerMenus.names(
+					us.bringardner.parley.files.viewer.test.TestViewerMenus.FILE, canPrint), file);
+			assertEquals(us.bringardner.parley.files.viewer.test.TestViewerMenus.EDIT, names(bar.getMenus().get(1)));
+			assertEquals(us.bringardner.parley.files.viewer.test.TestViewerMenus.VIEW, names(bar.getMenus().get(2)));
 			List<String> ret = new ArrayList<>();
 			for(Menu m : bar.getMenus()) {
 				StringBuilder b = new StringBuilder(m.getText()).append(":");
@@ -122,5 +132,33 @@ public class ViewerLookTest {
 		Assumptions.assumeFalse(CopyQueue.shared().isBusy());
 		assertTrue(onFx(ViewerWindow::okToQuit));
 		assertFalse(onFx(FxLook::appIcons).isEmpty());
+	}
+
+	private static List<String> names(Menu m) {
+		List<String> ret = new ArrayList<>();
+		for(MenuItem i : m.getItems()) {
+			ret.add(i instanceof javafx.scene.control.SeparatorMenuItem ? "-" : i.getText());
+		}
+		return ret;
+	}
+
+	@Test
+	public void copyAndPasteInATextFieldAreTheFieldsOwn() throws Exception {
+		FileSourceFactory local = FileSourceFactory.getDefaultFactory();
+		String copied = onFx(()->{
+			Stage stage = new Stage();
+			new ViewerWindow(local, local.createFileSource(dir.toString()), stage);
+			stage.show();
+			// a text field in the window (as the rename and search fields are)
+			javafx.scene.control.TextField field = new javafx.scene.control.TextField("some text");
+			((javafx.scene.layout.VBox) ((javafx.scene.layout.BorderPane) stage.getScene().getRoot()).getTop()).getChildren().add(field);
+			field.requestFocus();
+			field.selectAll();
+			MenuBar bar = (MenuBar) stage.getScene().getRoot().lookup(".menu-bar");
+			bar.getMenus().get(1).getItems().get(0).fire();
+			// (left open: closing the last viewer window ends JavaFX, and the other tests with it)
+			return javafx.scene.input.Clipboard.getSystemClipboard().getString();
+		});
+		assertEquals("some text", copied);
 	}
 }
