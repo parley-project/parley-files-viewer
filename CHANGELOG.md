@@ -34,6 +34,8 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
   Directory..., New Folder... moves to File, and its file menu's Search... is Find....
 - Edit With... works: it chose nothing before. Backup, which did what Copy does, is gone.
 - In a text field, Edit > Copy, Paste and Delete act on the text, not the files.
+- Folders are in the theme's colors in both viewers (the theme's light color with its accent
+  around), not the fixed yellow (Swing) and blue (JavaFX) ones; they change with the theme.
 - Both viewers start in the same folder: Start Here Next Time and Set Start Directory... in either
   set it for both (the JavaFX viewer's own setting, if any, is moved over once).
 
