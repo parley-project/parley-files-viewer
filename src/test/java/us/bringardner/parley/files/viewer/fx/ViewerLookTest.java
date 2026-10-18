@@ -96,12 +96,15 @@ public class ViewerLookTest {
 			}
 			return ret;
 		});
-		assertEquals(5, menus.size(), menus.toString());
+		// on macOS, About, Settings and Quit are in the application menu, which leaves Help empty, so
+		// it isn't shown; elsewhere Help has About
+		boolean mac = StandardMenus.isMac();
+		assertTrue(mac ? menus.size() == 4 || menus.size() == 5 : menus.size() == 5, menus.toString());
 		assertTrue(menus.get(0).startsWith("File: New Window, New Remote Session..."), menus.get(0));
 		assertTrue(menus.get(1).startsWith("Edit: Copy, Paste,") && menus.get(1).contains("Find..."), menus.get(1));
 		assertTrue(menus.get(2).startsWith("View: Show Hidden Files, Show File Extensions, Refresh"), menus.get(2));
 		assertTrue(menus.get(3).startsWith("Window: Minimize"), menus.get(3));
-		if( !StandardMenus.isMac() ) {
+		if( !mac ) {
 			assertTrue(menus.get(0).endsWith("Settings..., Exit,"), menus.get(0));
 			assertEquals("Help: About " + FxLook.APP_NAME + ",", menus.get(4));
 		}
