@@ -177,13 +177,21 @@ public class ViewerWindow {
 		MenuItem connect = item("New Remote Session...", null, this::connectTo);
 		MenuItem open = item("Open", new KeyCodeCombination(KeyCode.O, KeyCombination.SHORTCUT_DOWN), this::openSelected);
 		MenuItem openWith = item("Open With...", null, this::openWithSelected);
+		MenuItem editWith = item("Edit With...", null, this::editWithSelected);
+		MenuItem print = item("Print", null, this::printSelected);
+		MenuItem newFolder = item("New Folder...", new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN), this::newFolder);
+		MenuItem setStart = item("Set Start Directory...", null, this::chooseStartLocation);
 		MenuItem edit = item("Edit", new KeyCodeCombination(KeyCode.E, KeyCombination.SHORTCUT_DOWN), this::editSelected);
 		MenuItem terminal = item("New Terminal", new KeyCodeCombination(KeyCode.T, KeyCombination.SHORTCUT_DOWN,
 				KeyCombination.ALT_DOWN), ()->newTerminal(history.current()));
 		MenuItem search = item("Find...", new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), this::search);
 		MenuItem startHere = item("Start Here Next Time", null, this::setStartLocation);
 		MenuItem close = item("Close", new KeyCodeCombination(KeyCode.W, KeyCombination.SHORTCUT_DOWN), stage::close);
-		file.getItems().addAll(newWindow, connect, terminal);
+		// as in the Swing viewer
+		file.getItems().addAll(newWindow, connect, terminal, newFolder, new SeparatorMenuItem(), open, openWith, edit, editWith);
+		if( canPrint() ) {
+			file.getItems().add(print);
+		}
 		try {
 			recent = new RecentFileMenu(ViewerWindow.class);
 			recent.setOnOpened(this::openRecent);
@@ -191,8 +199,7 @@ public class ViewerWindow {
 		} catch (IOException e) {
 			// the menu is a convenience: the viewer works without it
 		}
-		file.getItems().addAll(new SeparatorMenuItem(), open, openWith, edit, new SeparatorMenuItem(), startHere,
-				new SeparatorMenuItem(), close);
+		file.getItems().addAll(new SeparatorMenuItem(), startHere, setStart, new SeparatorMenuItem(), close);
 
 		Menu editMenu = menus.edit;
 		pasteItem.setAccelerator(new KeyCodeCombination(KeyCode.V, KeyCombination.SHORTCUT_DOWN));
@@ -201,7 +208,6 @@ public class ViewerWindow {
 				item("Copy", new KeyCodeCombination(KeyCode.C, KeyCombination.SHORTCUT_DOWN), this::copySelected),
 				pasteItem,
 				new SeparatorMenuItem(),
-				item("New Folder...", new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN, KeyCombination.SHIFT_DOWN), this::newFolder),
 				item("Rename...", new KeyCodeCombination(KeyCode.F2), this::renameSelected),
 				item("Delete", new KeyCodeCombination(KeyCode.DELETE), this::deleteSelected),
 				new SeparatorMenuItem(), search);
@@ -307,15 +313,22 @@ public class ViewerWindow {
 				item("Open", null, this::openSelected),
 				item("Open With...", null, this::openWithSelected),
 				item("Edit", null, this::editSelected),
+				item("Edit With...", null, this::editWithSelected));
+		if( canPrint() ) {
+			menu.getItems().add(item("Print", null, this::printSelected));
+		}
+		menu.getItems().addAll(
 				item("New Terminal Here", null, this::terminalHere),
-				item("Search...", null, this::search),
+				item("Find...", null, this::search),
 				new SeparatorMenuItem(),
 				item("Copy", null, this::copySelected),
 				item("Paste", null, this::paste),
 				new SeparatorMenuItem(),
 				item("New Folder...", null, this::newFolder),
 				item("Rename...", null, this::renameSelected),
-				item("Delete", null, this::deleteSelected));
+				item("Delete", null, this::deleteSelected),
+				new SeparatorMenuItem(),
+				item("Refresh", null, this::refresh));
 		table.getTableView().setContextMenu(menu);
 		table.getTableView().getSelectionModel().getSelectedItems().addListener(
 				(javafx.collections.ListChangeListener<FileEntry>) c->updateStatus());
@@ -597,6 +610,61 @@ public class ViewerWindow {
 				});
 	}
 
+	/** Edit With... on the selected file. */
+	private void editWithSelected() {
+		for(FileEntry e : table.getSelectedEntries()) {
+			if( !e.isDirectory()) {
+				chooseApplication(e.getFile(), us.bringardner.parley.files.viewer.IRegistry.CommandType.Editor, "Edit");
+				return;
+			}
+		}
+	}
+
+	/** Print, where the system can: each file selected (a remote one is downloaded first). */
+	private void printSelected() {
+		for(FileEntry e : table.getSelectedEntries()) {
+			if( !e.isDirectory()) {
+				print(e.getFile());
+			}
+		}
+	}
+
+	/** True if the system can print files (the same test as the Swing viewer's). */
+	static boolean canPrint() {
+		return us.bringardner.parley.files.viewer.Printing.isAvailable();
+	}
+
+	/** Prints a file with the application the system has for it, as the Swing viewer does. */
+	void print(FileSource file) {
+		TransferWindow.<File>run(stage, "Download "+file.getName(),
+				progress->{
+					File local = FileOperations.localCopy(file);
+					us.bringardner.parley.files.viewer.Printing.print(local);
+					return local;
+				},
+				local->{},
+				error->{
+					if( error != null ) {
+						TransferWindow.showError(stage, "Can't print "+file.getName(), error);
+					}
+				});
+	}
+
+	/** File > Set Start Directory...: a folder chosen, on this window's file system, to start in next time. */
+	private void chooseStartLocation() {
+		us.bringardner.parley.files.fx.FileSourceChooser chooser = new us.bringardner.parley.files.fx.FileSourceChooser();
+		chooser.setTitle("Set Start Directory");
+		chooser.setSelectionMode(us.bringardner.parley.files.browse.SelectionMode.DIRECTORIES);
+		FileSource dir = history.current();
+		if( dir != null ) {
+			chooser.setInitialDirectory(dir);
+		}
+		FileSource chosen = chooser.showOpenDialog(stage);
+		if( chosen != null ) {
+			PREFS.put(PREF_START+"."+factory.getTypeId(), chosen.getAbsolutePath());
+		}
+	}
+
 	/** Open With... on the selected file. */
 	private void openWithSelected() {
 		for(FileEntry e : table.getSelectedEntries()) {
@@ -612,10 +680,15 @@ public class ViewerWindow {
 	 * downloaded, and changes to the copy are offered to be sent back (as Edit does).
 	 */
 	void openWith(FileSource file) {
-		TransferWindow.<List<us.bringardner.parley.files.viewer.IRegistry.RegData>>run(stage, "Open With",
-				progress->OpenWithDialog.appsFor(file.getName()),
+		chooseApplication(file, us.bringardner.parley.files.viewer.IRegistry.CommandType.Any, "Open");
+	}
+
+	/** Open With... and Edit With...: the applications of a kind for a file, one chosen, the file opened with it. */
+	private void chooseApplication(FileSource file, us.bringardner.parley.files.viewer.IRegistry.CommandType type, String verb) {
+		TransferWindow.<List<us.bringardner.parley.files.viewer.IRegistry.RegData>>run(stage, verb+" With",
+				progress->OpenWithDialog.appsFor(file.getName(), type),
 				apps->{
-					OpenWithDialog.Choice choice = OpenWithDialog.choose(stage, file.getName(), apps);
+					OpenWithDialog.Choice choice = OpenWithDialog.choose(stage, file.getName(), apps, verb);
 					if( choice != null ) {
 						openWith(file, choice);
 					}
@@ -752,7 +825,20 @@ public class ViewerWindow {
 
 	// ---------------------------------------------------------------- copy and paste
 
+	/**
+	 * The text field with the focus, if one has it: Copy, Paste and Delete act on its text then,
+	 * not on files (on macOS the menu bar sees the keys first).
+	 */
+	private javafx.scene.control.TextInputControl focusedText() {
+		Node f = stage.getScene() == null ? null : stage.getScene().getFocusOwner();
+		return f instanceof javafx.scene.control.TextInputControl ? (javafx.scene.control.TextInputControl) f : null;
+	}
+
 	private void copySelected() {
+		if( focusedText() != null ) {
+			focusedText().copy();
+			return;
+		}
 		List<FileSource> files = selectedFiles();
 		if( files.isEmpty()) {
 			return;
@@ -771,6 +857,10 @@ public class ViewerWindow {
 	}
 
 	private void paste() {
+		if( focusedText() != null ) {
+			focusedText().paste();
+			return;
+		}
 		FileSource dir = history.current();
 		if( dir == null ) {
 			return;
@@ -915,6 +1005,10 @@ public class ViewerWindow {
 	}
 
 	private void deleteSelected() {
+		if( focusedText() != null ) {
+			focusedText().deleteNextChar();
+			return;
+		}
 		List<FileSource> files = selectedFiles();
 		if( files.isEmpty()) {
 			return;

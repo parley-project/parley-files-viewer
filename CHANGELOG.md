@@ -26,6 +26,14 @@ First release under the Parley name. The viewer was `com.bringardner:bjl_file_sy
 - The JavaFX viewer has the Swing viewer's Open With... (the applications registered for a file,
   with their icons, or any other) and terminal (File > New Terminal, ⌥⌘T, and New Terminal Here:
   an fsh shell in a folder of any file system). The pom gains RichTextFX for the terminal.
+- The Swing and JavaFX viewers have the same menus. The Swing viewer gains File > New Folder... (⇧⌘N,
+  so New Remote Session... no longer has a shortcut), Open, Open With..., Edit, Edit With..., Print,
+  Recent Files and Start Here Next Time, and Edit > Copy, Paste, Rename... and Delete; its file
+  menu's items are named as the JavaFX viewer's (New Terminal Here, Rename..., New Folder...,
+  Edit With...) and it has Find.... The JavaFX viewer gains Edit With..., Print and Set Start
+  Directory..., New Folder... moves to File, and its file menu's Search... is Find....
+- Edit With... works: it chose nothing before. Backup, which did what Copy does, is gone.
+- In a text field, Edit > Copy, Paste and Delete act on the text, not the files.
 - The menus follow the standard Parley layout (swing-widgets' `StandardMenus`), the same as
   fsh-ide: File (New Window ⌘N, New Remote Session… ⇧⌘N, New Terminal ⌥⌘T, Close ⌘W, Set Start
   Directory…), Edit (Find… ⌘F), View (Show Hidden Files, Show File Extensions, Refresh ⌘R),

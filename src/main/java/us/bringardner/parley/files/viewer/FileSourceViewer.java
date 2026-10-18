@@ -137,6 +137,7 @@ import us.bringardner.parley.core.SecureBaseObject;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.FileSourceCopy;
 import us.bringardner.parley.files.swing.FileSourceChooserDialog;
+import us.bringardner.parley.files.swing.RecentFileMenu;
 import us.bringardner.parley.files.swing.FactoryPropertiesDialog;
 import us.bringardner.parley.files.FileSourceFactory;
 import us.bringardner.parley.files.swing.ProgressMonitorProgress;
@@ -185,7 +186,6 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	private static int currentId = 0;
 	private static File tmpdir;
 
-	private static boolean backupAvailible; 
 	private boolean showHidden = false;
 	private boolean showExtention=true;
 	private Set<TreePath> expandedSet = new HashSet<>();
@@ -197,15 +197,6 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	private boolean inSetTableModel=false;
 
 
-	static {
-
-		try {
-			Class.forName("us.bringardner.parley.files.Backup");
-			backupAvailible = true;
-		} catch (Exception e) {
-		}
-
-	}
 
 	static class ActionContext {
 		List<FileSource> files;
@@ -483,7 +474,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			pane.setVisible(false);
 
 			String prefId = PREF_START_LOCATION+"_"+factory.getTypeId();			
-			String tmp = pref.get(prefId, null);
+			String tmp = startAt != null ? startAt.getAbsolutePath() : pref.get(prefId, null);
 			if( tmp == null ) {
 				if (factory instanceof FileProxyFactory) {
 					tmp = System.getProperty("user.home");					
@@ -500,6 +491,10 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 								factory.setCurrentDirectory(homeDir);
 								TreePath path2 = buildTreePath(homeDir);			
 								tree.setSelectionPath(path2);					
+								// Recent Files, as in the JavaFX viewer: the folder a window starts in
+								if( recentFiles != null ) {
+									recentFiles.addRecent(homeDir);
+								}
 							} catch (IOException e) {
 								showError("Error setting home directory", e);
 							}
@@ -889,7 +884,6 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 
 	private JMenuItem itemPaste;
 	private JMenuItem itemDelete;
-	private JMenuItem itemBackup;
 	private JMenuItem itemCopy;
 	private JMenuItem itemOpen;
 	private JMenuItem itemOpenWith;
@@ -897,6 +891,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	private JMenuItem itemRefresh;
 	private JMenuItem itemOpenTerminal;
 	private JMenuItem itemNewFolder;
+	private JMenuItem itemFind;
 	private JMenuItem itemEdit;
 	private JMenuItem itemEditWith;
 	private JMenuItem itemPrint;
@@ -1467,15 +1462,19 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 	}
 
+	/**
+	 * Edit With...: an application chosen from those registered as editors of the file (or any
+	 * other), as Open With... does; a remote file is edited as a copy, whose changes are offered to be
+	 * sent back.
+	 */
 	public void editWith(FileSource file) {
-
-
+		chooseApplication(file, CommandType.Editor);
 	}
 
 	public void print(FileSource file) {
 		withLocalFile(file, local->{
 			try {
-				Desktop.getDesktop().print(local);
+				Printing.print(local);
 			} catch (IOException e) {
 				MessageDialog.showErrorDialog(e.getMessage(),"Can't print "+local+"\n"+e);
 			}
@@ -1585,17 +1584,10 @@ Panel.font = javax.swing.plaf.FontUIResource
 		});
 		popup.add(itemDelete);
 
-		if( !backupAvailible) {
-			itemBackup = new JMenuItem("Backup");
-			itemBackup.addActionListener(new ActionListener() {
-
-
-				public void actionPerformed(ActionEvent evt) {
-					backupActionSet();
-				}
-			});
-			popup.add(itemBackup);
-		}
+		// (Backup, which was here when no Backup class could be found, did what Copy does: gone)
+		itemFind = new JMenuItem("Find...");
+		itemFind.addActionListener(e->getMntmSearch().doClick());
+		popup.add(itemFind);
 
 		itemCopy = new JMenuItem("Copy");
 		itemCopy.addActionListener(new ActionListener() {
@@ -1697,7 +1689,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 					}
 				});
 				popup.add(itemEdit);
-				itemEditWith = new JMenuItem("Edit with...");
+				itemEditWith = new JMenuItem("Edit With...");
 				itemEditWith.addActionListener(new ActionListener() {
 
 
@@ -1721,7 +1713,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 			}
 
-			if(destop.isSupported(Action.PRINT)) {
+			if( Printing.isAvailable() ) {
 
 				itemPrint = new JMenuItem("Print");
 				itemPrint.addActionListener(new ActionListener() {
@@ -1746,7 +1738,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 		} // is desktop supported 
 
-		itemRename = new JMenuItem("Rename");
+		itemRename = new JMenuItem("Rename...");
 		itemRename.addActionListener(new ActionListener() {
 
 
@@ -1756,7 +1748,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		});
 		popup.add(itemRename);
 
-		itemNewFolder = new JMenuItem("New Folder");
+		itemNewFolder = new JMenuItem("New Folder...");
 		itemNewFolder.addActionListener(new ActionListener() {
 
 
@@ -1767,7 +1759,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		popup.add(itemNewFolder);
 
 
-		itemOpenTerminal = new JMenuItem("New terminal at location");
+		itemOpenTerminal = new JMenuItem("New Terminal Here");
 		itemOpenTerminal.addActionListener((e)->{
 			if( actionTarget !=null ) {
 				if( actionTarget.files.size()>0) {
@@ -1903,12 +1895,12 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 		});
 
-		allMenus =      Arrays.asList(itemOpenTerminal,itemPaste,itemDelete,itemBackup,itemCopy,itemOpen,itemOpenWith,itemRename,itemRefresh,itemEdit,itemEditWith,itemPrint,itemNewFolder);
-		fileReadMenus = Arrays.asList(itemCopy,itemOpen,itemOpenWith,itemPrint);
+		allMenus =      Arrays.asList(itemOpenTerminal,itemPaste,itemDelete,itemCopy,itemOpen,itemOpenWith,itemRename,itemRefresh,itemEdit,itemEditWith,itemPrint,itemNewFolder,itemFind);
+		fileReadMenus = Arrays.asList(itemCopy,itemOpen,itemOpenWith,itemPrint,itemFind);
 
 		fileWriteMenus= Arrays.asList(itemDelete,itemRename,itemEdit,itemEditWith);
 
-		dirReadMenus  = Arrays.asList(itemOpenTerminal,itemCopy,itemOpen,itemRefresh);
+		dirReadMenus  = Arrays.asList(itemOpenTerminal,itemCopy,itemOpen,itemRefresh,itemFind);
 		dirWriteMenus = Arrays.asList(itemOpenTerminal,itemDelete,itemRename,itemNewFolder);
 
 		new Thread(()-> {
@@ -1928,8 +1920,17 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 
 	protected void openWith(FileSource f) {
+		chooseApplication(f, CommandType.Any);
+	}
+
+	/** Open With... and Edit With...: the applications of a kind for a file, one chosen, the file opened with it. */
+	private void chooseApplication(FileSource f, CommandType type) {
 		IRegistry reg = IRegistry.getRegistry();
-		List<RegData> list = reg.getRegisteredHandler(f.getName(), CommandType.Any);
+		List<RegData> list = reg.getRegisteredHandler(f.getName(), type);
+		if( (list == null || list.isEmpty()) && type != CommandType.Any ) {
+			// no editors registered as such: any application that opens it
+			list = reg.getRegisteredHandler(f.getName(), CommandType.Any);
+		}
 		if( list == null || list.size()==0) {
 			MessageDialog.showMessageDialog("No application availible to open "+f, "");
 			return;
@@ -2682,14 +2683,72 @@ Panel.font = javax.swing.plaf.FontUIResource
 				.settings(()->actionAppearance(getFrame())).quit(FileSourceViewer::okToQuit);
 
 		menus.file.add(menuItem(getMntmLocalBrowser(), "New Window", StandardMenus.keys(KeyEvent.VK_N, 0)));
-		menus.file.add(menuItem(getMntmRemoteBrowser(), "New Remote Session...",
-				StandardMenus.keys(KeyEvent.VK_N, StandardMenus.SHIFT)));
+		// (no shortcut: Shift-Shortcut-N is New Folder, as in Finder and the JavaFX viewer)
+		menus.file.add(menuItem(getMntmRemoteBrowser(), "New Remote Session...", null));
 		menus.file.add(menuItem(getMntmTerminal(), "New Terminal", StandardMenus.keys(KeyEvent.VK_T, StandardMenus.ALT)));
+		menus.file.add(StandardMenus.item("New Folder...", StandardMenus.keys(KeyEvent.VK_N, StandardMenus.SHIFT),
+				()->{
+					actionTarget = currentFolder();
+					newFolder(null);
+				}));
+		menus.file.addSeparator();
+		menus.file.add(StandardMenus.item("Open", StandardMenus.keys(KeyEvent.VK_O, 0), ()->forSelectedFiles(true, this::open)));
+		menus.file.add(StandardMenus.item("Open With...", ()->forSelectedFiles(false, this::openWith)));
+		menus.file.add(StandardMenus.item("Edit", StandardMenus.keys(KeyEvent.VK_E, 0), ()->forSelectedFiles(false, this::edit)));
+		menus.file.add(StandardMenus.item("Edit With...", ()->forSelectedFiles(false, this::editWith)));
+		if( Printing.isAvailable() ) {
+			menus.file.add(StandardMenus.item("Print", ()->forSelectedFiles(false, this::print)));
+		}
+		try {
+			recentFiles = new RecentFileMenu(FileSourceViewer.class);
+			recentFiles.addActionListener(e->openRecent(e.getSource()));
+			menus.file.add(recentFiles);
+		} catch (IOException e) {
+			// the menu is a convenience: the viewer works without it
+		}
+		menus.file.addSeparator();
+		menus.file.add(StandardMenus.item("Start Here Next Time", this::startHereNextTime));
+		menus.file.add(menuItem(getMntmStartLocation(), "Set Start Directory...", null));
 		menus.file.addSeparator();
 		menus.file.add(menuItem(getMntmClose(), "Close", StandardMenus.keys(KeyEvent.VK_W, 0)));
-		menus.file.addSeparator();
-		menus.file.add(menuItem(getMntmStartLocation(), "Set Start Directory...", null));
 
+		// Edit, as in the JavaFX viewer: on the files selected in the list (or the tree, if it has the
+		// focus); Paste into the folder selected, or the one shown
+		// (in a text field, Copy, Paste and Delete are the field's: on macOS the menu bar sees the keys first)
+		menus.edit.add(StandardMenus.item("Copy", StandardMenus.keys(KeyEvent.VK_C, 0), ()->{
+			if( focusedText() != null ) {
+				focusedText().copy();
+				return;
+			}
+			actionTarget = menuSelection();
+			copyActionSet();
+		}));
+		menus.edit.add(StandardMenus.item("Paste", StandardMenus.keys(KeyEvent.VK_V, 0), ()->{
+			if( focusedText() != null ) {
+				focusedText().paste();
+				return;
+			}
+			actionTarget = pasteTarget();
+			pasteToActionSet();
+		}));
+		menus.edit.addSeparator();
+		menus.edit.add(StandardMenus.item("Rename...", javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_F2, 0), ()->{
+			actionTarget = menuSelection();
+			renameActionSet();
+		}));
+		menus.edit.add(StandardMenus.item("Delete", javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), ()->{
+			javax.swing.text.JTextComponent text = focusedText();
+			if( text != null ) {
+				javax.swing.Action a = text.getActionMap().get(javax.swing.text.DefaultEditorKit.deleteNextCharAction);
+				if( a != null ) {
+					a.actionPerformed(new ActionEvent(text, ActionEvent.ACTION_PERFORMED, "delete"));
+				}
+				return;
+			}
+			actionTarget = menuSelection();
+			deletActionSet();
+		}));
+		menus.edit.addSeparator();
 		menus.edit.add(menuItem(getMntmSearch(), "Find...", StandardMenus.keys(KeyEvent.VK_F, 0)));
 
 		// the toolbar's menu has these too: the same settings, so either changes both
@@ -2703,6 +2762,89 @@ Panel.font = javax.swing.plaf.FontUIResource
 		menus.view.add(StandardMenus.item("Refresh", KeyEvent.VK_R, this::refreshAll));
 
 		menus.install(getFrame());
+	}
+
+	private RecentFileMenu recentFiles;
+	/** The folder a window opened from Recent Files starts in, instead of the saved start folder. */
+	private FileSource startAt;
+
+	/** The text field with the focus, if one has it. */
+	private static javax.swing.text.JTextComponent focusedText() {
+		java.awt.Component f = java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+		return f instanceof javax.swing.text.JTextComponent ? (javax.swing.text.JTextComponent) f : null;
+	}
+
+	/** The files selected: in the tree if it has the focus, otherwise in the list. */
+	private ActionContext menuSelection() {
+		java.awt.Component focus = java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+		if( focus != null && SwingUtilities.isDescendingFrom(focus, getTree()) ) {
+			return getSelectedFromTree();
+		}
+		return getSelectedFromTable();
+	}
+
+	/** The folder shown. */
+	private ActionContext currentFolder() {
+		List<FileSource> list = new ArrayList<>();
+		if( currentNode != null && currentNode.getDir() != null ) {
+			list.add(currentNode.getDir());
+		}
+		return new ActionContext(getTable(), list);
+	}
+
+	/** Where Paste puts the files: the one folder selected, or the folder shown. */
+	private ActionContext pasteTarget() {
+		ActionContext sel = menuSelection();
+		try {
+			if( sel.files.size() == 1 && sel.files.get(0).isDirectory() ) {
+				return sel;
+			}
+		} catch (IOException e) {
+			// the folder shown, then
+		}
+		return currentFolder();
+	}
+
+	/** Runs an action on each file selected in the list (and, if asked, opens a folder selected). */
+	private void forSelectedFiles(boolean foldersToo, java.util.function.Consumer<FileSource> action) {
+		try {
+			for(FileSource f : getSelectedFromTable().files) {
+				if( f.isDirectory() ) {
+					if( foldersToo ) {
+						setSelectionPath(buildTreePath(f));
+						return;
+					}
+				} else {
+					action.accept(f);
+				}
+			}
+		} catch (Exception e) {
+			showError("", e);
+		}
+	}
+
+	/** File > Start Here Next Time: the folder shown is where the viewer starts, for this kind of file system. */
+	private void startHereNextTime() {
+		if( currentNode != null && currentNode.getDir() != null && !(currentNode.getDir() instanceof RootFile) ) {
+			pref.put(PREF_START_LOCATION+"_"+factory.getTypeId(), currentNode.getDir().getAbsolutePath());
+		}
+	}
+
+	/** Recent Files: a folder opens in a new window; a file, in a new window on its folder. */
+	private void openRecent(Object opened) {
+		if( !(opened instanceof FileSource) ) {
+			return;
+		}
+		FileSource file = (FileSource) opened;
+		try {
+			FileSource dir = file.isDirectory() ? file : file.getParentFile();
+			FileSourceViewer window = new FileSourceViewer();
+			window.startAt = dir;
+			window.setup(file.getFileSourceFactory(), true);
+			window.show();
+		} catch (IOException e) {
+			showError("Can't open "+file.getAbsolutePath(), e);
+		}
 	}
 
 	/** One of the viewer's own items, under its standard name and shortcut. */
@@ -2986,16 +3128,6 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 	protected void copyActionSet() {
 
-		if( actionTarget != null ) {
-			if( actionTarget.files.size() > 0 ) {
-				clipboard.setContents(createTransferable(actionTarget.files),this);
-			}
-		}
-
-		actionTarget = null;
-	}
-
-	protected void backupActionSet() {
 		if( actionTarget != null ) {
 			if( actionTarget.files.size() > 0 ) {
 				clipboard.setContents(createTransferable(actionTarget.files),this);

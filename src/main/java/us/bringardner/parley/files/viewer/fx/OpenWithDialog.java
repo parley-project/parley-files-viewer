@@ -92,7 +92,14 @@ class OpenWithDialog {
 	private Choice chosen;
 
 	OpenWithDialog(Window owner, String fileName, List<RegData> apps) {
-		stage.setTitle("Open With");
+		this(owner, fileName, apps, "Open");
+	}
+
+	/**
+	 * @param verb "Open" (Open With...) or "Edit" (Edit With...)
+	 */
+	OpenWithDialog(Window owner, String fileName, List<RegData> apps, String verb) {
+		stage.setTitle(verb + " With");
 		stage.initModality(Modality.WINDOW_MODAL);
 		if( owner != null ) {
 			stage.initOwner(owner);
@@ -127,13 +134,13 @@ class OpenWithDialog {
 			list.getSelectionModel().select(0);
 		}
 
-		Label heading = new Label("Open \"" + fileName + "\" with:");
+		Label heading = new Label(verb + " \"" + fileName + "\" with:");
 		Button other = new Button("Other Application...");
 		other.setOnAction(e->chooseOther());
 		Button cancel = new Button("Cancel");
 		cancel.setCancelButton(true);
 		cancel.setOnAction(e->cancel());
-		Button open = new Button("Open");
+		Button open = new Button(verb);
 		open.setDefaultButton(true);
 		open.disableProperty().bind(list.getSelectionModel().selectedItemProperty().isNull());
 		open.setOnAction(e->ok());
@@ -158,15 +165,31 @@ class OpenWithDialog {
 	 * @return what was chosen, or null if canceled
 	 */
 	static Choice choose(Window owner, String fileName, List<RegData> apps) {
-		OpenWithDialog d = new OpenWithDialog(owner, fileName, apps);
+		return choose(owner, fileName, apps, "Open");
+	}
+
+	/** As above, for "Open" (Open With...) or "Edit" (Edit With...). */
+	static Choice choose(Window owner, String fileName, List<RegData> apps, String verb) {
+		OpenWithDialog d = new OpenWithDialog(owner, fileName, apps, verb);
 		d.stage.showAndWait();
 		return d.chosen;
 	}
 
 	/** The applications registered for a file (by its name), or none where there's no registry. */
 	static List<RegData> appsFor(String fileName) {
+		return appsFor(fileName, IRegistry.CommandType.Any);
+	}
+
+	/**
+	 * The applications of a kind registered for a file: editors for Edit With... (or, with none
+	 * registered as such, any that open it).
+	 */
+	static List<RegData> appsFor(String fileName, IRegistry.CommandType type) {
 		try {
-			List<RegData> ret = IRegistry.getRegistry().getRegisteredHandler(fileName, IRegistry.CommandType.Any);
+			List<RegData> ret = IRegistry.getRegistry().getRegisteredHandler(fileName, type);
+			if( (ret == null || ret.isEmpty()) && type != IRegistry.CommandType.Any ) {
+				ret = IRegistry.getRegistry().getRegisteredHandler(fileName, IRegistry.CommandType.Any);
+			}
 			return ret == null ? new ArrayList<>() : new ArrayList<>(ret);
 		} catch (RuntimeException | LinkageError e) {
 			return new ArrayList<>();

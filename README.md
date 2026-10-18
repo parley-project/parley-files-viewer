@@ -105,12 +105,28 @@ or FTPS server, say) ask first, in a JavaFX dialog, instead of failing:
 
 `FxCertificateValidator.install()` does the wiring; `ViewerApp` calls it at start.
 
-### Open With and the terminal
+### Menus
+
+Both viewers have the same menus:
+
+- File: New Window, New Remote Session..., New Terminal, New Folder..., Open, Open With..., Edit,
+  Edit With..., Print, Recent Files, Start Here Next Time, Set Start Directory..., Close
+- Edit: Copy, Paste, Rename..., Delete, Find... (in a text field, Copy, Paste and Delete are the
+  field's own)
+- View: Show Hidden Files, Show File Extensions, Refresh
+
+and the file list's menu has Open, Open With..., Edit, Edit With..., Print, New Terminal Here,
+Find..., Copy, Paste, New Folder..., Rename..., Delete and Refresh. Start Here Next Time starts the
+viewer in the folder shown; Set Start Directory... chooses the folder. Print uses the system's
+printing (lp on Linux).
+
+### Open With, Edit With and the terminal
 
 - File > Open With... (and the file list's menu) lists the applications this computer has for the
   file, with their icons (the Swing viewer's registry: Launch Services on macOS, the registry on
   Windows), and Other Application... picks any other. A remote file is opened as a copy, and
-  changes to it are offered to be sent back, as Edit does.
+  changes to it are offered to be sent back, as Edit does. Edit With... does the same with the
+  applications registered as editors of the file.
 - File > New Terminal (⌥⌘T) opens an fsh shell in the folder shown, on any file system, local or
   remote; New Terminal Here (the file list's menu) opens it in the folder selected. "exit" closes
   the window, and closing the window ends the shell.
