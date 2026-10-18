@@ -80,6 +80,30 @@ public class ViewerWindow {
 	static final String PREF_SHOW_EXTENSIONS = "ShowExtensions";
 	static final String PREF_START = "StartLocation";
 
+	/**
+	 * The folder a kind of file system starts in, shared with the Swing viewer (its preferences and
+	 * key). One saved by an earlier JavaFX viewer, in its own preferences, is moved there.
+	 */
+	static String startLocation(String typeId) {
+		String key = us.bringardner.parley.files.viewer.FileSourceViewer.PREF_START_LOCATION + "_" + typeId;
+		String ret = FxLook.prefs().get(key, null);
+		String old = PREFS.get(PREF_START + "." + typeId, null);
+		if( old != null ) {
+			if( ret == null ) {
+				FxLook.prefs().put(key, old);
+				ret = old;
+			}
+			PREFS.remove(PREF_START + "." + typeId);
+		}
+		return ret;
+	}
+
+	/** Sets the folder a kind of file system starts in, for both viewers. */
+	static void setStartLocation(String typeId, FileSource dir) {
+		FxLook.prefs().put(us.bringardner.parley.files.viewer.FileSourceViewer.PREF_START_LOCATION + "_" + typeId,
+				dir.getAbsolutePath());
+	}
+
 	private static final Preferences PREFS = Preferences.userNodeForPackage(ViewerWindow.class);
 	private static final DataFormat DRAG_FORMAT = new DataFormat("application/x-parley-file-sources");
 
@@ -396,7 +420,7 @@ public class ViewerWindow {
 
 	/** The folder the user chose to start in, else the factory's current one, else its first root. */
 	private FileSource startDirectory() {
-		String saved = PREFS.get(PREF_START+"."+factory.getTypeId(), null);
+		String saved = startLocation(factory.getTypeId());
 		try {
 			if( saved != null ) {
 				FileSource dir = factory.createFileSource(saved);
@@ -561,7 +585,7 @@ public class ViewerWindow {
 	private void setStartLocation() {
 		FileSource dir = history.current();
 		if( dir != null ) {
-			PREFS.put(PREF_START+"."+factory.getTypeId(), dir.getAbsolutePath());
+			setStartLocation(factory.getTypeId(), dir);
 		}
 	}
 
@@ -661,7 +685,7 @@ public class ViewerWindow {
 		}
 		FileSource chosen = chooser.showOpenDialog(stage);
 		if( chosen != null ) {
-			PREFS.put(PREF_START+"."+factory.getTypeId(), chosen.getAbsolutePath());
+			setStartLocation(factory.getTypeId(), chosen);
 		}
 	}
 

@@ -121,6 +121,29 @@ public class ViewerLookTest {
 	}
 
 	@Test
+	public void sharesTheStartFolderWithTheSwingViewer() throws Exception {
+		String type = "test-" + System.nanoTime();
+		String swingKey = us.bringardner.parley.files.viewer.FileSourceViewer.PREF_START_LOCATION + "_" + type;
+		java.util.prefs.Preferences fxOwn = java.util.prefs.Preferences.userNodeForPackage(ViewerWindow.class);
+		try {
+			// one an earlier JavaFX viewer saved in its own preferences moves to the shared one
+			fxOwn.put(ViewerWindow.PREF_START + "." + type, "/old/place");
+			assertEquals("/old/place", ViewerWindow.startLocation(type));
+			assertEquals("/old/place", FxLook.prefs().get(swingKey, null));
+			assertEquals(null, fxOwn.get(ViewerWindow.PREF_START + "." + type, null));
+
+			// set here, it's the Swing viewer's
+			FileSourceFactory local = FileSourceFactory.getDefaultFactory();
+			ViewerWindow.setStartLocation(type, local.createFileSource(dir.toString()));
+			assertEquals(dir.toString(), FxLook.prefs().get(swingKey, null));
+			assertEquals(dir.toString(), ViewerWindow.startLocation(type));
+		} finally {
+			FxLook.prefs().remove(swingKey);
+			fxOwn.remove(ViewerWindow.PREF_START + "." + type);
+		}
+	}
+
+	@Test
 	public void sharesItsSettingsWithTheSwingViewer() {
 		assertEquals("/us/bringardner/parley/files/viewer", FxLook.prefs().absolutePath());
 		assertEquals(java.util.prefs.Preferences.userNodeForPackage(us.bringardner.parley.files.viewer.RootFile.class)
