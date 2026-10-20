@@ -104,4 +104,13 @@ class FileSearchTest {
 		assertTrue(found.isEmpty());
 		assertTrue(new SearchCriteria().isEmpty());
 	}
+
+	/** A size too large for a long is refused, not turned into a negative number that matches everything. */
+	@Test
+	public void aSizeTooLargeIsRefused() {
+		assertEquals(5L * 1024 * 1024 * 1024, SearchCriteria.bytes(5, 1024L * 1024 * 1024, "the size"));
+		IllegalArgumentException e = org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+				() -> SearchCriteria.bytes(8_589_934_592L, 1024L * 1024 * 1024, "the size"));
+		assertTrue(e.getMessage().contains("too large"), e.getMessage());
+	}
 }
