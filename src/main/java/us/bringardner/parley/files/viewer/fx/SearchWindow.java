@@ -319,7 +319,7 @@ public class SearchWindow {
 			case "GB": unit = 1024L*1024*1024; break;
 			default: break;
 			}
-			long a = number(size1, "the size") * unit;
+			long a = SearchCriteria.bytes(number(size1, "the size"), unit, "the size");
 			SearchCriteria.Operator op;
 			long b = 0;
 			switch( sizeOp.getValue()) {
@@ -327,7 +327,7 @@ public class SearchWindow {
 			case "exactly": op = SearchCriteria.Operator.EXACTLY; break;
 			case "between":
 				op = SearchCriteria.Operator.BETWEEN;
-				b = number(size2, "the second size") * unit;
+				b = SearchCriteria.bytes(number(size2, "the second size"), unit, "the second size");
 				break;
 			default: op = SearchCriteria.Operator.AT_LEAST; break;
 			}

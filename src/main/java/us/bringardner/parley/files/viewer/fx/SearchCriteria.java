@@ -134,4 +134,16 @@ final class SearchCriteria {
 		}
 		return buf.toString();
 	}
+
+	/**
+	 * A size in bytes: {@code n} of {@code unit} (1, 1024, ...).
+	 * @throws IllegalArgumentException (a message to show) if it is more bytes than a size can be
+	 */
+	static long bytes(long n, long unit, String what) {
+		try {
+			return Math.multiplyExact(n, unit);
+		} catch (ArithmeticException tooBig) {
+			throw new IllegalArgumentException("That is too large for " + what + ".");
+		}
+	}
 }
