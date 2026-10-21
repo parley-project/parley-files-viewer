@@ -149,6 +149,14 @@
 			<artifactId>parley-files-sftp</artifactId>
 			<version>1.0.0</version>
 		</dependency>
+		<!-- parley-files-sftp has no SSH library of its own: the provider for Parley's own one, which it
+		     prefers when it's there (JSch or MINA could be added instead) -->
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-files-sftp-parley-ssh</artifactId>
+			<version>1.0.0</version>
+			<scope>runtime</scope>
+		</dependency>
 		<dependency>
 			<groupId>us.bringardner.parley</groupId>
 			<artifactId>parley-files-jdbc</artifactId>

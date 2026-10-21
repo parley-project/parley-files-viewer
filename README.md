@@ -16,7 +16,7 @@ Formerly `com.bringardner:bjl_file_system_viewer` (BjlFileSystemViewer), with pa
 
 - **Java 11** or later, like the other Parley modules (the "Open terminal" action uses
   [fsh](https://github.com/parley-project/parley-fsh), which runs on Java 11 too)
-- Built on parley-core, parley-io, parley-net, parley-files, parley-files-swing, parley-files-sftp, parley-files-jdbc
+- Built on parley-core, parley-io, parley-net, parley-files, parley-files-swing, parley-files-sftp (with its parley-ssh provider), parley-files-jdbc
   and [swing-widgets](https://github.com/parley-project/swing-widgets), which now holds the
   gradient buttons, dialogs and fields that used to be the viewer's `us.bringardner.swing` package
 
