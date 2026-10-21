@@ -1,6 +1,6 @@
 # Changelog
 
-## parley-files-viewer 1.0.0 (unreleased)
+## parley-files-viewer 1.0.0 (2026-10-21)
 
 First release under the Parley name. The viewer was `com.bringardner:bjl_file_system_viewer`
 (BjlFileSystemViewer) in the Bringardner Java Library.
