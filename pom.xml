@@ -13,7 +13,7 @@
 	</parent>
 
 	<artifactId>parley-files-viewer</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>Parley Files Viewer</name>
 	<description>A Swing application for browsing, copying, searching and editing files on any
 		parley-files file system (local, memory, FTP, SFTP, JDBC). Formerly
@@ -164,7 +164,7 @@
 		<dependency>
 			<groupId>us.bringardner</groupId>
 			<artifactId>fsh</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<version>1.0.0</version>
 		</dependency>
 
 		<dependency>
