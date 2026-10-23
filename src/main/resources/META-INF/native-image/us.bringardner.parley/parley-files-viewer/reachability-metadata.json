@@ -3957,9 +3957,6 @@
       "type": "us.bringardner.fsh.commands.Unalias"
     },
     {
-      "type": "us.bringardner.fsh.commands.Unmount"
-    },
-    {
       "type": "us.bringardner.fsh.commands.Unset"
     },
     {
