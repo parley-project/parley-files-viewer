@@ -94,6 +94,14 @@ final class FxLook {
 	 * macOS, where it would stay the generic Java icon. Best effort.
 	 */
 	static void dockIcon() {
+		// Every window opened from now on (dialogs, alerts) gets the app icon, not the Java cup
+		Window.getWindows().addListener((javafx.collections.ListChangeListener<Window>) c -> {
+			while( c.next() ) {
+				if( c.wasAdded() ) {
+					c.getAddedSubList().forEach(FxLook::icons);
+				}
+			}
+		});
 		try {
 			if( java.awt.Taskbar.isTaskbarSupported()
 					&& java.awt.Taskbar.getTaskbar().isSupported(java.awt.Taskbar.Feature.ICON_IMAGE) ) {

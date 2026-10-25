@@ -51,7 +51,7 @@ class TerminalWindow {
 		console.setStdErr(view.getStdErr());
 		view.getIo().setConsole(console);
 		if( dir != null ) {
-			console.setCurrentDirectory(dir);
+			console.startIn(dir);
 		}
 
 		StandardMenus menus = new StandardMenus(FxLook.APP_NAME).about(()->ViewerWindow.showAbout(stage))
