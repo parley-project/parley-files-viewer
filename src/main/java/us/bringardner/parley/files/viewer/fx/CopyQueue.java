@@ -316,6 +316,12 @@ final class CopyQueue {
 		fireIdle();
 	}
 
+	/**
+	 * Copies one job. A file already at the destination is replaced only once the copy is
+	 * complete: the copy is written to a hidden name next to it and then renamed over it, so a
+	 * failed or canceled copy leaves the old file as it was. Only what this copy wrote is ever
+	 * deleted.
+	 */
 	private void run(Job job) {
 		if( job.cancelRequested ) {
 			job.state = State.CANCELED;
@@ -326,37 +332,44 @@ final class CopyQueue {
 		job.startTime = System.currentTimeMillis();
 		job.state = State.RUNNING;
 		fireChanged();
+		FileSource written = null;
 		boolean partial = false;
 		try {
 			job.expected = job.source.length();
 			int block = FileSourceCopy.blockSizeFor(job.source, job.dest);
 			byte[] buffer = new byte[block];
+			boolean replacing = job.dest.exists();
+			written = replacing ? tempFor(job.dest) : job.dest;
 			long last = 0;
-			try( InputStream in = job.source.getInputStream(FileSourceCopy.optionsFor(block));
-					OutputStream out = job.dest.getOutputStream(false, FileSourceCopy.optionsFor(block))) {
-				partial = true;
-				long done = 0;
-				while( !job.cancelRequested ) {
-					while( paused && !job.cancelRequested ) {
-						Thread.sleep(20);
-					}
-					int got = in.read(buffer);
-					if( got < 0 ) {
-						break;
-					}
-					out.write(buffer, 0, got);
-					done += got;
-					job.copied = done;
-					long now = System.currentTimeMillis();
-					if( now-last > 100 ) {
-						last = now;
-						fireChanged();
+			try( InputStream in = job.source.getInputStream(FileSourceCopy.optionsFor(block))) {
+				try( OutputStream out = written.getOutputStream(false, FileSourceCopy.optionsFor(block))) {
+					partial = true;
+					long done = 0;
+					while( !job.cancelRequested ) {
+						while( paused && !job.cancelRequested ) {
+							Thread.sleep(20);
+						}
+						int got = in.read(buffer);
+						if( got < 0 ) {
+							break;
+						}
+						out.write(buffer, 0, got);
+						done += got;
+						job.copied = done;
+						long now = System.currentTimeMillis();
+						if( now-last > 100 ) {
+							last = now;
+							fireChanged();
+						}
 					}
 				}
 			}
 			if( job.cancelRequested ) {
 				job.state = State.CANCELED;
 			} else {
+				if( replacing && !written.renameTo(job.dest, true)) {
+					throw new IOException("Can't replace "+job.dest.getAbsolutePath());
+				}
 				partial = false;
 				job.state = State.DONE;
 			}
@@ -367,16 +380,25 @@ final class CopyQueue {
 			job.error = e;
 			job.state = State.FAILED;
 		}
-		if( partial && job.state != State.DONE ) {
-			// what's there is only the start of the file
+		if( partial && written != null ) {
+			// only the start of the file (never a file that was there before)
 			try {
-				job.dest.delete();
+				written.delete();
 			} catch (IOException | RuntimeException e) {
 				// nothing more to do
 			}
 		}
 		job.endTime = System.currentTimeMillis();
 		fireChanged();
+	}
+
+	/** A hidden name next to {@code target} for a copy that will replace it. */
+	static FileSource tempFor(FileSource target) throws IOException {
+		FileSource parent = target.getParentFile();
+		if( parent == null ) {
+			throw new IOException("Can't replace "+target.getAbsolutePath()+": it has no parent directory");
+		}
+		return parent.getChild("."+target.getName()+"."+Long.toHexString(System.nanoTime())+".copying");
 	}
 
 	private void fireChanged() {
