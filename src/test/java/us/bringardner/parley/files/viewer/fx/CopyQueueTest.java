@@ -207,4 +207,61 @@ class CopyQueueTest {
 		assertTrue(q.getJobs().isEmpty());
 		assertEquals(0, q.getBatchTotal());
 	}
+
+	@Test
+	void anOverwriteLeavesNoTemporaryFile() throws Exception {
+		write("src/a.txt", "new");
+		write("dest/a.txt", "old");
+		Job j = new Job(fs(new File(root, "src/a.txt")), fs(new File(root, "dest/a.txt")));
+		runAll(new CopyQueue(), List.of(j));
+		assertEquals(State.DONE, j.getState());
+		assertEquals("new", read("dest/a.txt"));
+		assertEquals(List.of("a.txt"), List.of(new File(root, "dest").list()));
+	}
+
+	@Test
+	void aFailedOverwriteKeepsTheOldFile() throws Exception {
+		write("dest/a.txt", "old");
+		// the source is gone by the time its turn comes
+		Job j = new Job(fs(new File(root, "src/a.txt")), fs(new File(root, "dest/a.txt")));
+		runAll(new CopyQueue(), List.of(j));
+		assertEquals(State.FAILED, j.getState());
+		assertEquals("old", read("dest/a.txt"));
+		assertEquals(List.of("a.txt"), List.of(new File(root, "dest").list()));
+	}
+
+	@Test
+	void aCanceledOverwriteKeepsTheOldFile() throws Exception {
+		StringBuilder big = new StringBuilder();
+		for(int i=0; i < 100_000; i++) {
+			big.append("0123456789");
+		}
+		write("src/a.bin", big.toString());
+		write("dest/a.bin", "old");
+		CopyQueue q = new CopyQueue();
+		q.setPaused(true);
+		Job a = new Job(fs(new File(root, "src/a.bin")), fs(new File(root, "dest/a.bin")));
+		CountDownLatch idle = new CountDownLatch(1);
+		AtomicBoolean sawRunning = new AtomicBoolean();
+		q.addListener(new CopyQueue.Listener() {
+			@Override public void changed() {
+				if( a.getState() == State.RUNNING ) {
+					sawRunning.set(true);
+				}
+			}
+			@Override public void idle(boolean foldersMade) { idle.countDown(); }
+		});
+		q.enqueue(List.of(a));
+		long end = System.currentTimeMillis()+10_000;
+		while( !sawRunning.get() && System.currentTimeMillis() < end ) {
+			Thread.sleep(10);
+		}
+		assertTrue(sawRunning.get());
+		q.cancel(a);
+		q.setPaused(false);
+		assertTrue(idle.await(20, TimeUnit.SECONDS));
+		assertEquals(State.CANCELED, a.getState());
+		assertEquals("old", read("dest/a.bin"));
+		assertEquals(List.of("a.bin"), List.of(new File(root, "dest").list()));
+	}
 }
