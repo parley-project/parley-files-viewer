@@ -174,7 +174,8 @@ public class ViewerAppsTest {
 		// a program chosen from the disk
 		OpenWithDialog.Choice program = new OpenWithDialog.Choice(null, new File("/usr/bin/less"));
 		if( !System.getProperty("os.name", "").toLowerCase().startsWith("mac") ) {
-			assertEquals(List.of("/usr/bin/less", "/tmp/a b.txt"), program.command("/tmp/a b.txt"));
+			// (the program's absolute path: with a drive and \ on Windows)
+			assertEquals(List.of(new File("/usr/bin/less").getAbsolutePath(), "/tmp/a b.txt"), program.command("/tmp/a b.txt"));
 		}
 		assertEquals("less", program.toString());
 
