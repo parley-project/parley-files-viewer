@@ -360,7 +360,7 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 				actionCancel();
 			}
 		});
-		cancelButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/Cancel30x30.png")));
+		cancelButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/MargotCancel30x30.png")));
 
 		hideButton = new JButton("");
 		hideButton.addActionListener(new ActionListener() {
@@ -412,7 +412,7 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 		});
 		cancelCurrentButton.setBorderPainted(false);
 		cancelCurrentButton.setToolTipText("Cancel current copy");
-		cancelCurrentButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/Cancel30x30.png")));
+		cancelCurrentButton.setIcon(new ImageIcon(CopyProgressPanel.class.getResource("/us/bringardner/parley/files/viewer/icons/MargotCancel30x30.png")));
 		cancelOnePanel.add(cancelCurrentButton);
 
 		clearButton = new JButton("");

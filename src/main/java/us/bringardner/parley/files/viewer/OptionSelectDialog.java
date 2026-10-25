@@ -46,6 +46,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 
+import us.bringardner.parley.brand.ParleyBrand;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.swing.FileSourceChooserDialog;
 import us.bringardner.parley.files.FileSourceFilter;
@@ -147,6 +148,7 @@ public class OptionSelectDialog extends JDialog {
 	 * Create the dialog.
 	 */
 	public OptionSelectDialog() {
+		setIconImages(ParleyBrand.appIcons("files"));
 		setBounds(100, 100, 543, 326);
 
 		getContentPane().setLayout(new BorderLayout());

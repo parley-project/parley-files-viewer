@@ -8,6 +8,7 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import us.bringardner.parley.brand.ParleyBrand;
 import us.bringardner.parley.files.viewer.FileSourceViewer.CopyProgressListner;
 
 import java.awt.event.ActionListener;
@@ -50,7 +51,7 @@ public class CopySingleDialog extends JDialog implements CopyProgressListner {
 	 * Create the dialog.
 	 */
 	public CopySingleDialog() {
-		
+		setIconImages(ParleyBrand.appIcons("files"));
 		setBounds(100, 100, 459, 157);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
