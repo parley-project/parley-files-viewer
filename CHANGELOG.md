@@ -50,6 +50,8 @@ Needs parley-files-swing, parley-files-fx, swing-widgets, fx-widgets and fsh 1.1
   taken as relative to the file system's current folder, not the file's): the file now stays in
   its own folder, as in the JavaFX viewer, and a name with a separator or one already taken is
   refused.
+- Copying over an existing file no longer loses it when the copy fails or is canceled: the copy is
+  written to a hidden name next to it (`.<name>.<hex>.copying`) and replaces it only once complete.
 
 ## parley-files-viewer 1.0.0 (2026-10-21)
 
