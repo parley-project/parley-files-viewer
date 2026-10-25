@@ -533,7 +533,8 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			children = new ArrayList<FileSourceTreeNode>();
 
 			try {
-				FileSource[] kids = parent.dir.listFiles(new ProgressMonitorProgress(progress));
+				// progress is never created, and ProgressMonitorProgress rejects a null monitor
+				FileSource[] kids = parent.dir.listFiles();
 				// Create nodes here but do NOT insert into tree model now
 				for (FileSource f : kids) {
 					if(f.isDirectory()) {
@@ -553,6 +554,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 					}
 				});
 			} catch ( Exception exp ) {
+				showError("Loading " + parent.dir, exp);
 				return exp;
 			}
 
@@ -1533,6 +1535,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 		}
 		this.factory = factory1;
 
+		// Dialogs (open remote, new folder...) get the app icon too, not the Java cup
+		ParleyBrand.installDefaultWindowIcons("files");
 		getFrame().setIconImages(null);
 		// The menus every Parley application has (swing-widgets' StandardMenus): in the window's menu
 		// bar, which on macOS is at the top of the screen
@@ -2915,7 +2919,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 				cwd = factory.getCurrentDirectory();
 			}
 			
-			console.setCurrentDirectory(cwd);
+			console.startIn(cwd);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
