@@ -117,6 +117,29 @@
 					</systemPropertyVariables>
 				</configuration>
 			</plugin>
+			<!-- META-INF/parley/launcher.list in the jar: how parley-launcher runs it, and every jar it
+			     needs with its SHA-256 (parley-launcher add NAME COORDINATES [MAIN]) -->
+			<plugin>
+				<groupId>us.bringardner.parley</groupId>
+				<artifactId>parley-launcher-maven-plugin</artifactId>
+				<version>${project.version}</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>list</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<mainClass>us.bringardner.parley.files.viewer.FileSourceViewer</mainClass>
+					<!-- (the JavaFX viewer is in the same jar: parley-launcher add parley-files-viewer-fx
+					     COORDINATES us.bringardner.parley.files.viewer.fx.Launcher) -->
+					<options>
+						<option>17+:--enable-native-access=ALL-UNNAMED</option>
+						<option>macos:-Xdock:name={app}</option>
+					</options>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
 
