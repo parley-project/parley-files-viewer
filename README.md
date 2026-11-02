@@ -100,7 +100,7 @@ or FTPS server, say) ask first, in a JavaFX dialog, instead of failing:
   signed by the server itself.
 - Reject is the default button and what closing the window means. "Accept This Time" lasts for the
   session; "Always Accept" is remembered for that server and certificate only (parley-net's
-  `DynamicTrustManager` keeps it in `~/.bjlTructed`, shared with the Swing viewer).
+  `DynamicTrustManager` keeps it in `~/.parley/trusted-certificates`, or the file `parley.net.client.trustFile` names, shared with the Swing viewer).
 - Several connections to one server ask once.
 
 `FxCertificateValidator.install()` does the wiring; `ViewerApp` calls it at start.
