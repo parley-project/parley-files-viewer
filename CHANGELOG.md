@@ -1,5 +1,17 @@
 # Changelog
 
+## parley-files-viewer 2.0.0 (unreleased)
+
+### Changed (2026-11-02: preference keys, To-Do 2.19)
+
+- **The Swing and JavaFX viewers keep every preference in one place**, `/us/bringardner/parley/files/viewer`
+  (`FileSourceViewer.PREFERENCES_NODE`, `preferences()`), so they share the start folder, hidden files and extensions
+  shown, the recent files and the appearance. The JavaFX viewer's own node (`.../viewer/fx`) is no longer used.
+- **One spelling and one separator for each key**: `StartLocation.<type id>` (was `StartLocation_<type id>`),
+  `ShowHidden.<type id>`, `ShowExtensions.<type id>` (was `ShowExtention.<type id>` in the Swing viewer);
+  `FileSourceViewer.PREF_SHOW_EXTENSIONS` (was `PREF_SHOW_EXTENTION`) and `preferenceKey(name, typeId)`. Values saved
+  by 1.x under the old keys aren't carried over, and the JavaFX viewer no longer moves its older start folders.
+
 ## parley-files-viewer 1.1.0 (unreleased)
 
 Needs parley-files-swing, parley-files-fx, swing-widgets, fx-widgets and fsh 1.1.0.

@@ -76,35 +76,30 @@ import us.bringardner.parley.files.fx.RecentFileMenu;
  */
 public class ViewerWindow {
 
-	static final String PREF_SHOW_HIDDEN = "ShowHidden";
-	static final String PREF_SHOW_EXTENSIONS = "ShowExtensions";
-	static final String PREF_START = "StartLocation";
+	static final String PREF_SHOW_HIDDEN = us.bringardner.parley.files.viewer.FileSourceViewer.PREF_SHOW_HIDDEN;
+	static final String PREF_SHOW_EXTENSIONS = us.bringardner.parley.files.viewer.FileSourceViewer.PREF_SHOW_EXTENSIONS;
+	static final String PREF_START = us.bringardner.parley.files.viewer.FileSourceViewer.PREF_START_LOCATION;
 
 	/**
-	 * The folder a kind of file system starts in, shared with the Swing viewer (its preferences and
-	 * key). One saved by an earlier JavaFX viewer, in its own preferences, is moved there.
+	 * A preference of one kind of file system, {@code <name>.<type id>}, as the Swing viewer's
+	 * (FileSourceViewer.preferenceKey; not called, so the Swing viewer's class isn't loaded here).
 	 */
+	static String key(String name, String typeId) {
+		return name + "." + typeId;
+	}
+
+	/** The folder a kind of file system starts in, shared with the Swing viewer (its preferences and key). */
 	static String startLocation(String typeId) {
-		String key = us.bringardner.parley.files.viewer.FileSourceViewer.PREF_START_LOCATION + "_" + typeId;
-		String ret = FxLook.prefs().get(key, null);
-		String old = PREFS.get(PREF_START + "." + typeId, null);
-		if( old != null ) {
-			if( ret == null ) {
-				FxLook.prefs().put(key, old);
-				ret = old;
-			}
-			PREFS.remove(PREF_START + "." + typeId);
-		}
-		return ret;
+		return PREFS.get(key(PREF_START, typeId), null);
 	}
 
 	/** Sets the folder a kind of file system starts in, for both viewers. */
 	static void setStartLocation(String typeId, FileSource dir) {
-		FxLook.prefs().put(us.bringardner.parley.files.viewer.FileSourceViewer.PREF_START_LOCATION + "_" + typeId,
-				dir.getAbsolutePath());
+		PREFS.put(key(PREF_START, typeId), dir.getAbsolutePath());
 	}
 
-	private static final Preferences PREFS = Preferences.userNodeForPackage(ViewerWindow.class);
+	/** The Swing viewer's preferences, so both viewers share them */
+	private static final Preferences PREFS = FxLook.prefs();
 	private static final DataFormat DRAG_FORMAT = new DataFormat("application/x-parley-file-sources");
 
 	// shared by every window, so a copy can be pasted into another window, even one on another server
@@ -146,11 +141,11 @@ public class ViewerWindow {
 		this.stage = stage == null ? new Stage() : stage;
 
 		String type = factory.getTypeId();
-		table.showHiddenProperty().set(PREFS.getBoolean(PREF_SHOW_HIDDEN+"."+type, false));
-		table.showExtensionsProperty().set(PREFS.getBoolean(PREF_SHOW_EXTENSIONS+"."+type, true));
+		table.showHiddenProperty().set(PREFS.getBoolean(key(PREF_SHOW_HIDDEN, type), false));
+		table.showExtensionsProperty().set(PREFS.getBoolean(key(PREF_SHOW_EXTENSIONS, type), true));
 		tree.showHiddenProperty().bind(table.showHiddenProperty());
-		table.showHiddenProperty().addListener((o, was, is)->PREFS.putBoolean(PREF_SHOW_HIDDEN+"."+type, is));
-		table.showExtensionsProperty().addListener((o, was, is)->PREFS.putBoolean(PREF_SHOW_EXTENSIONS+"."+type, is));
+		table.showHiddenProperty().addListener((o, was, is)->PREFS.putBoolean(key(PREF_SHOW_HIDDEN, type), is));
+		table.showExtensionsProperty().addListener((o, was, is)->PREFS.putBoolean(key(PREF_SHOW_EXTENSIONS, type), is));
 
 		BorderPane root = new BorderPane();
 		root.setTop(new VBox(buildMenuBar(), buildToolbar()));
@@ -217,7 +212,7 @@ public class ViewerWindow {
 			file.getItems().add(print);
 		}
 		try {
-			recent = new RecentFileMenu(ViewerWindow.class);
+			recent = new RecentFileMenu(PREFS);
 			recent.setOnOpened(this::openRecent);
 			file.getItems().add(recent);
 		} catch (IOException e) {

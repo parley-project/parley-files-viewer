@@ -123,24 +123,28 @@ public class ViewerLookTest {
 	@Test
 	public void sharesTheStartFolderWithTheSwingViewer() throws Exception {
 		String type = "test-" + System.nanoTime();
-		String swingKey = us.bringardner.parley.files.viewer.FileSourceViewer.PREF_START_LOCATION + "_" + type;
-		java.util.prefs.Preferences fxOwn = java.util.prefs.Preferences.userNodeForPackage(ViewerWindow.class);
+		String swingKey = us.bringardner.parley.files.viewer.FileSourceViewer.PREF_START_LOCATION + "." + type;
+		assertEquals("StartLocation." + type, swingKey);
 		try {
-			// one an earlier JavaFX viewer saved in its own preferences moves to the shared one
-			fxOwn.put(ViewerWindow.PREF_START + "." + type, "/old/place");
-			assertEquals("/old/place", ViewerWindow.startLocation(type));
-			assertEquals("/old/place", FxLook.prefs().get(swingKey, null));
-			assertEquals(null, fxOwn.get(ViewerWindow.PREF_START + "." + type, null));
-
-			// set here, it's the Swing viewer's
+			// set here, it's the Swing viewer's (one key, one node)
 			FileSourceFactory local = FileSourceFactory.getDefaultFactory();
 			ViewerWindow.setStartLocation(type, local.createFileSource(dir.toString()));
 			assertEquals(dir.toString(), FxLook.prefs().get(swingKey, null));
 			assertEquals(dir.toString(), ViewerWindow.startLocation(type));
+			// and set by the Swing viewer, it's this one's
+			FxLook.prefs().put(swingKey, "/swing/place");
+			assertEquals("/swing/place", ViewerWindow.startLocation(type));
 		} finally {
 			FxLook.prefs().remove(swingKey);
-			fxOwn.remove(ViewerWindow.PREF_START + "." + type);
 		}
+	}
+
+	@Test
+	public void theKeysHaveOneSpellingAndOneSeparator() {
+		assertEquals("ShowHidden.sftp", ViewerWindow.key(ViewerWindow.PREF_SHOW_HIDDEN, "sftp"));
+		assertEquals("ShowExtensions.sftp", ViewerWindow.key(ViewerWindow.PREF_SHOW_EXTENSIONS, "sftp"));
+		assertEquals(us.bringardner.parley.files.viewer.FileSourceViewer.preferenceKey(ViewerWindow.PREF_SHOW_HIDDEN, "sftp"),
+				ViewerWindow.key(ViewerWindow.PREF_SHOW_HIDDEN, "sftp"));
 	}
 
 	@Test

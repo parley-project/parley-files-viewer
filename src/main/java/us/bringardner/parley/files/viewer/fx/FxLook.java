@@ -51,7 +51,8 @@ final class FxLook {
 	 * the same theme and font.
 	 */
 	static Preferences prefs() {
-		return Preferences.userRoot().node("/us/bringardner/parley/files/viewer");
+		// the Swing viewer's constant (inlined: its class isn't loaded)
+		return Preferences.userRoot().node(us.bringardner.parley.files.viewer.FileSourceViewer.PREFERENCES_NODE);
 	}
 
 	/** The app icon with the folder badge in every size; the OS picks the one it needs. */
