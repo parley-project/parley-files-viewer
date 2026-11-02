@@ -159,14 +159,35 @@ import us.bringardner.swing.dialog.SettingsDialog;
 
 public class FileSourceViewer extends FileSourceViewerBase implements ClipboardOwner {
 
-	private static Preferences pref = Preferences.userNodeForPackage(FileSourceViewer.class);
+	/**
+	 * Where both viewers (Swing and JavaFX) keep their preferences, so they share them: the start
+	 * folder, hidden files and extensions shown for each kind of file system, the recent files,
+	 * and the appearance.
+	 * @since 2.0.0
+	 */
+	public static final String PREFERENCES_NODE = "/us/bringardner/parley/files/viewer";
 
+	private static Preferences pref = Preferences.userRoot().node(PREFERENCES_NODE);
+
+	/** The viewers' preferences ({@link #PREFERENCES_NODE}) */
+	public static Preferences preferences() {
+		return pref;
+	}
+
+	/** {@code ShowHidden.<type id>}: hidden files shown for this kind of file system */
 	public static final String PREF_SHOW_HIDDEN = "ShowHidden";
 	/** A file from another machine larger than this many MB is asked about before it is downloaded; 0 never asks. */
 	public static final String PREF_LARGE_FILE_MB = "LargeFileMb";
 	public static final int DEFAULT_LARGE_FILE_MB = 50;
-	public static final String PREF_SHOW_EXTENTION = "ShowExtention";
+	/** {@code ShowExtensions.<type id>}: extensions shown for this kind of file system (was ShowExtention) */
+	public static final String PREF_SHOW_EXTENSIONS = "ShowExtensions";
+	/** {@code StartLocation.<type id>}: the folder the viewer starts in, for this kind of file system (was StartLocation_) */
 	public static final String PREF_START_LOCATION = "StartLocation";
+
+	/** A preference of one kind of file system: {@code <name>.<type id>} */
+	public static String preferenceKey(String name, String typeId) {
+		return name + "." + typeId;
+	}
 
 	public static final String ICON_LOCATION = "/us/bringardner/parley/files/viewer/icons";
 	// the same colors the swing-widgets gradient widgets use
@@ -471,7 +492,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			setStatus(root1);
 			pane.setVisible(false);
 
-			String prefId = PREF_START_LOCATION+"_"+factory.getTypeId();			
+			String prefId = preferenceKey(PREF_START_LOCATION, factory.getTypeId());			
 			String tmp = startAt != null ? startAt.getAbsolutePath() : pref.get(prefId, null);
 			if( tmp == null ) {
 				if (factory instanceof FileProxyFactory) {
@@ -1541,8 +1562,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 		installStandardMenus();
 
 
-		showHidden    = pref.getBoolean(PREF_SHOW_HIDDEN+"."+factory1.getTypeId(),    showHidden);
-		showExtention = pref.getBoolean(PREF_SHOW_EXTENTION+"."+factory1.getTypeId(), showExtention);
+		showHidden    = pref.getBoolean(preferenceKey(PREF_SHOW_HIDDEN, factory1.getTypeId()), showHidden);
+		showExtention = pref.getBoolean(preferenceKey(PREF_SHOW_EXTENSIONS, factory1.getTypeId()), showExtention);
 
 
 		final JFrame frame = getFrame();
@@ -2700,7 +2721,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			menus.file.add(StandardMenus.item("Print", ()->forSelectedFiles(false, this::print)));
 		}
 		try {
-			recentFiles = new RecentFileMenu(FileSourceViewer.class);
+			recentFiles = new RecentFileMenu(pref);
 			recentFiles.addActionListener(e->openRecent(e.getSource()));
 			menus.file.add(recentFiles);
 		} catch (IOException e) {
@@ -2826,7 +2847,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 	/** File > Start Here Next Time: the folder shown is where the viewer starts, for this kind of file system. */
 	private void startHereNextTime() {
 		if( currentNode != null && currentNode.getDir() != null && !(currentNode.getDir() instanceof RootFile) ) {
-			pref.put(PREF_START_LOCATION+"_"+factory.getTypeId(), currentNode.getDir().getAbsolutePath());
+			pref.put(preferenceKey(PREF_START_LOCATION, factory.getTypeId()), currentNode.getDir().getAbsolutePath());
 		}
 	}
 
@@ -2872,7 +2893,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 	protected void actionSetStartLocation() {
 		try {
 			FileSource dir = currentNode.getDir();
-			String prefId = PREF_START_LOCATION+"_"+factory.getTypeId();
+			String prefId = preferenceKey(PREF_START_LOCATION, factory.getTypeId());
 			String tmp = pref.get(prefId, null);
 			if( tmp != null ) {
 				FileSource tmpDir = factory.createFileSource(tmp);
@@ -2930,7 +2951,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 	protected void refreshAll()  {
 		new Thread(()->{
-			String id = PREF_SHOW_HIDDEN+"."+factory.getTypeId();
+			String id = preferenceKey(PREF_SHOW_HIDDEN, factory.getTypeId());
 			pref.putBoolean(id, showHidden);
 			try {
 				pref.flush();
