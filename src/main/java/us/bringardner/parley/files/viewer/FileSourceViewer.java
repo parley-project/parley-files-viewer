@@ -196,7 +196,6 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 
 
 
-	protected static final String PREF_COL_WIDTHS = "ColumnWidths";
 
 	private static Map<Integer,FileSourceViewer> runningViewers = new HashMap<>();
 	private static Map<Integer,FileSourceFactory> sessions = new HashMap<Integer,FileSourceFactory>();
