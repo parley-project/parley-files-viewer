@@ -28,7 +28,6 @@ package us.bringardner.parley.files.viewer;
 import javax.swing.UIManager;
 import us.bringardner.swing.gradient.Theme;
 import java.awt.Component;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -37,7 +36,6 @@ import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableModel;
 
 import us.bringardner.parley.files.FileSource;
 
@@ -109,22 +107,10 @@ public class FileTableCellRenderer implements TableCellRenderer {
 		}
 		
 		
-		TableModel tm = table.getModel();
-		if (tm instanceof FileTableModel) {
-			FileTableModel ftm = (FileTableModel) tm;
-			FileSource f = ftm.getFile(table.convertRowIndexToModel(row));
-			
-			try {
-				FileSource l = f.getLinkedTo();
-				if( l != null ) {
-					comp.setToolTipText(l.getCanonicalPath());
-				} else {
-					comp.setToolTipText(f.getCanonicalPath());
-				}
-			} catch (IOException e) {
-			}						
-		}
-		
+		// The tooltip isn't worked out here: a renderer runs for every cell on
+		// every paint, and the canonical path of a remote file takes a server
+		// request per element of its path. The table asks FileTableModel.getToolTip
+		// for the row under the mouse instead (FileSourceViewerBase).
 		return comp;
 	}
 

@@ -293,8 +293,10 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			try {
 				FileSource link = dir.getLinkedTo();
 				if( link != null ) {
-					displayName += " -> "+link.getCanonicalPath();
-					shortName += " -> "+link.getCanonicalPath();
+					// once: for a remote file each canonical path is a request per element of the path
+					String target = " -> "+link.getCanonicalPath();
+					displayName += target;
+					shortName += target;
 				}
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -422,6 +424,8 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 		private final FileSourceTreeNode wait;
 		private List<FileSourceTreeNode> children= new ArrayList<>();
 		private FileSource root1;
+		/** The table's rows, read from the same listing in the background. */
+		private List<FileTableModel.Row> tableRows;
 		private Component pane;
 
 
@@ -449,6 +453,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 					root1 =  factory.getCurrentDirectory();
 				}
 				FileSource [] kids =  root1.listFiles();
+				tableRows = FileTableModel.load(root1, kids, showHidden);
 				if( kids !=null ) {
 					Arrays.sort(kids, new Comparator<FileSource>() {
 						@Override
@@ -487,7 +492,11 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			tree.setModel(model);
 			TreePath path = new TreePath(model.getRoot());			
 			tree.setSelectionPath(path);				
-			setTableModel(root1);
+			if( tableRows != null ) {
+				setTableModel(new FileTableModel(root1, tableRows, showHidden, showExtention));
+			} else {
+				setTableModel(root1);
+			}
 			setStatus(root1);
 			pane.setVisible(false);
 
@@ -533,6 +542,8 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 		private JTree tree;
 		private Component pane;
 		private ProgressMonitor progress;
+		/** The table's rows, read from the same listing in the background. */
+		private List<FileTableModel.Row> tableRows;
 
 		// Called in AWT Event Thread
 		FileSourceTreeLoadingWorking( FileSourceTreeNode lastNode, TreePath path, JTree tree) {
@@ -553,6 +564,8 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			try {
 				// progress is never created, and ProgressMonitorProgress rejects a null monitor
 				FileSource[] kids = parent.dir.listFiles();
+				// the table shows the same folder: its rows come from this listing, not another one
+				tableRows = FileTableModel.load(parent.dir, kids, showHidden);
 				// Create nodes here but do NOT insert into tree model now
 				for (FileSource f : kids) {
 					if(f.isDirectory()) {
@@ -591,7 +604,11 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			tree.expandPath(path);
 			tree.setSelectionPath(path);
 			tree.scrollPathToVisible(path);				
-			setTableModel(parent.dir);
+			if( tableRows != null ) {
+				setTableModel(new FileTableModel(parent.dir, tableRows, showHidden, showExtention));
+			} else {
+				setTableModel(parent.dir);
+			}
 
 			pane.setVisible( false );
 		}
@@ -628,9 +645,47 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 		return rv;
 	}
 
+	/** Counts the models given to the table, so a load that finishes after a newer one is dropped. Event thread only. */
+	private int tableGeneration;
+
+	/**
+	 * Shows 'dir' in the table. The folder is listed, and its files' details
+	 * read, in the background: for a remote folder that's a round trip to the
+	 * server or more per file, and it used to be done here, on the event
+	 * thread. Until it's done the table is empty, with 'dir' as its folder.
+	 */
 	public void setTableModel(FileSource dir) {
+		setTableModel(new FileTableModel(dir, Collections.emptyList(), showHidden, showExtention));
+		final int generation = tableGeneration;
+		final boolean hidden = showHidden;
+		final boolean extention = showExtention;
+		new SwingWorker<List<FileTableModel.Row>, Object>() {
+			@Override
+			protected List<FileTableModel.Row> doInBackground() throws Exception {
+				return FileTableModel.load(dir, null, hidden);
+			}
+
+			@Override
+			protected void done() {
+				if( generation != tableGeneration ) {
+					return;   // another folder has been shown since
+				}
+				try {
+					setTableModel(new FileTableModel(dir, get(), hidden, extention));
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				} catch (java.util.concurrent.ExecutionException e) {
+					e.getCause().printStackTrace();   // as before: the folder shows no files
+				}
+			}
+		}.execute();
+	}
+
+	/** Gives the table a model whose rows are already read. Event thread. */
+	public void setTableModel(FileTableModel model) {
+		tableGeneration++;
 		JTable table = getTable();
-		table.setModel(new FileTableModel(dir, showHidden, showExtention));
+		table.setModel(model);
 		if( columnWidths!=null ) {
 			inSetTableModel = true;
 			TableColumnModel cm = table.getColumnModel();
@@ -2254,15 +2309,6 @@ Panel.font = javax.swing.plaf.FontUIResource
 						if( obj instanceof FileSourceTreeNode) {
 
 							currentNode = ((FileSourceTreeNode)obj);
-							try {
-								FileSource link = currentNode.getDir().getLinkedTo();
-								if( link != null ) {
-									if( link.isChildOfMine(currentNode.getDir())) {
-
-									}
-								}
-							} catch (IOException e) {
-							}
 
 							if( !tree.isExpanded(sel)) {
 								tree.expandPath(sel);
