@@ -45,6 +45,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSplitPane;
+import java.awt.event.MouseEvent;
 import javax.swing.JTable;
 import javax.swing.JTree;
 import javax.swing.ListSelectionModel;
@@ -288,7 +289,19 @@ public class FileSourceViewerBase {
 		tableScrollPane = new JScrollPane();		
 		splitPane.setRightComponent(tableScrollPane);
 		
-		table = new JTable();
+		table = new JTable() {
+			private static final long serialVersionUID = 1L;
+
+			/** A file's tooltip, worked out only for the row under the mouse (see FileTableModel.getToolTip). */
+			@Override
+			public String getToolTipText(MouseEvent event) {
+				if( getModel() instanceof FileTableModel ) {
+					int row = rowAtPoint(event.getPoint());
+					return row < 0 ? null : ((FileTableModel) getModel()).getToolTip(convertRowIndexToModel(row));
+				}
+				return super.getToolTipText(event);
+			}
+		};
 		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		tableScrollPane.setViewportView(table);
 		

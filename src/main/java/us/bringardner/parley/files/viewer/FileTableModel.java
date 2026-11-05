@@ -41,32 +41,128 @@ import us.bringardner.parley.files.viewer.IRegistry.CommandType;
 import us.bringardner.parley.files.viewer.IRegistry.RegData;
 import us.bringardner.swing.dialog.MessageDialog;
 
+/**
+ * The files of one folder, for the viewer's table.
+ * <p>
+ * Each file's details (date, type, size, readable, link) are read once, when
+ * the folder is loaded, and kept in a {@link Row}; painting the table only
+ * reads them back. For a remote folder (SFTP) every detail can be a round trip
+ * to the server, and the table paints each cell many times (scrolling,
+ * hovering, selecting), so asking the file again on every paint made a
+ * 40-file folder cost over a thousand requests per repaint.
+ * <p>
+ * A row's tooltip (its canonical path, which for SFTP takes a request per
+ * element of the path) is worked out the first time the mouse rests on it.
+ * <p>
+ * {@link #load} does the reading and may be slow; call it off the event
+ * thread and give the rows to {@link #FileTableModel(FileSource, List, boolean, boolean)}.
+ */
 public class FileTableModel extends AbstractTableModel {
 
 	private static final long serialVersionUID = 1L;
 
-	private FileSource[] files = new FileSource[0];
-	private FileSource dir;
+	/** One file's details, as they were when the folder was loaded. */
+	public static final class Row {
+		final FileSource file;
+		final String name;
+		final long lastModified;
+		final boolean directory;
+		final long length;
+		final boolean readable;
+		final boolean link;
+		/** Why the details couldn't be read, or null. */
+		final String error;
+		/** Worked out on first use, on the event thread. */
+		private String toolTip;
+		private Icon icon;
 
+		Row(FileSource file) {
+			this.file = file;
+			this.name = file.getName().trim();
+			long lm = 0, len = 0;
+			boolean dir = false, rd = false, lk = false;
+			String err = null;
+			try {
+				dir = file.isDirectory();
+				lm = file.lastModified();
+				len = dir ? -1 : file.length();
+				lk = file.getLinkedTo() != null;
+				rd = FileTableCellRenderer.isReadable(file);
+			} catch (IOException e) {
+				err = e.getMessage();
+			}
+			this.lastModified = lm;
+			this.directory = dir;
+			this.length = len;
+			this.link = lk;
+			this.readable = rd;
+			this.error = err;
+		}
+
+		public FileSource getFile() {
+			return file;
+		}
+	}
+
+	private Row[] rows = new Row[0];
+	private FileSource dir;
 	private boolean showHidden = true;
 	private boolean showExtention = true;
+
 	/** Folders in the theme's colors (swing-widgets' FolderIcon), as in the JavaFX viewer. */
 	public static final Icon dirIcon = new us.bringardner.swing.gradient.FolderIcon(20, us.bringardner.swing.gradient.FolderIcon.Kind.CLOSED);
 	public static final Icon dirIconNoRead = new us.bringardner.swing.gradient.FolderIcon(20, us.bringardner.swing.gradient.FolderIcon.Kind.NOT_READABLE);
-
 	//public static final Icon fileIcon = new ImageIcon(FileTableModel.class.getResource(FileSourceViewer.ICON_LOCATION+"/fileicon_8mm_10mm.png"));
 	public static final Icon fileIcon = new ImageIcon(FileTableModel.class.getResource(FileSourceViewer.ICON_LOCATION+"/fileicon_20.png"));
 	public static final Icon fileIconNoRead = new ImageIcon(FileTableModel.class.getResource(FileSourceViewer.ICON_LOCATION+"/fileicon_not_readable_20.png"));
 
-
-	//  Only used by viewer.setup
+	/** Lists 'dir' and reads its files' details now, on this thread. */
 	public FileTableModel(FileSource root1,boolean showHidden,boolean showExtention) {
 		this.showHidden = showHidden;
 		this.showExtention = showExtention;
 		setDir(root1);
 	}
 
-	
+	/** Rows already read by {@link #load}; touches nothing on the server. */
+	public FileTableModel(FileSource dir, List<Row> rows, boolean showHidden, boolean showExtention) {
+		this.dir = dir;
+		this.showHidden = showHidden;
+		this.showExtention = showExtention;
+		this.rows = rows.toArray(new Row[rows.size()]);
+	}
+
+	/**
+	 * Reads the rows for 'dir': its files, sorted by name, without the hidden
+	 * ones unless showHidden. Talks to the server; call it off the event thread.
+	 *
+	 * @param listing dir's files if they have just been listed (so they
+	 *        aren't listed again), or null to list them here
+	 */
+	public static List<Row> load(FileSource dir, FileSource[] listing, boolean showHidden) throws IOException {
+		FileSource[] tmp = listing;
+		if( tmp == null ) {
+			tmp = dir != null ? dir.listFiles() : null;
+		}
+		List<Row> ret = new ArrayList<>();
+		if( tmp == null ) {
+			return ret;
+		}
+		List<FileSource> list = new ArrayList<FileSource>();
+		for (FileSource f : tmp) {
+			if( showHidden || !isHidden(f) ) {
+				list.add(f);
+			}
+		}
+		Collections.sort(list, new Comparator<FileSource>() {
+			public int compare(FileSource arg0, FileSource arg1) {
+				return arg0.getName().compareToIgnoreCase(arg1.getName());
+			}
+		});
+		for (FileSource f : list) {
+			ret.add(new Row(f));
+		}
+		return ret;
+	}
 
 	public boolean isShowHidden() {
 		return showHidden;
@@ -88,120 +184,99 @@ public class FileTableModel extends AbstractTableModel {
 		return dir;
 	}
 
+	/** Lists 'dir' and reads its files' details now, on this thread. */
 	public void setDir(FileSource dir) {
 		this.dir = dir;
-
 		try {
-			FileSource[] tmp = 
-					dir != null?dir.listFiles():
-						new FileSource[0];
-			if( tmp == null ) {
-				tmp = new FileSource[0];
-			}
-			List<FileSource> list = new ArrayList<FileSource>();
-			for (FileSource f : tmp) {
-				if( showHidden 
-						|| 
-						!isHidden(f) ) {
-					list.add(f);
-				}
-			}
-
-			Collections.sort(list, new Comparator<FileSource>() {
-
-				public int compare(FileSource arg0, FileSource arg1) {
-					return arg0.getName().compareToIgnoreCase(arg1.getName());
-				}
-			});
-			files = list.toArray(new FileSource[list.size()]);
+			List<Row> list = load(dir, null, showHidden);
+			rows = list.toArray(new Row[list.size()]);
 			fireTableDataChanged();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private boolean isHidden(FileSource f) throws IOException {
+	private static boolean isHidden(FileSource f) throws IOException {
 		return f.isHidden() || f.getName().startsWith(".");
 	}
-
 
 	public int getColumnCount() {
 		return colNames.length;
 	}
 
-
 	public int getRowCount() {
-		return files.length;
+		return rows.length;
 	}
 
 	public FileSource getFile(int row) {
-		return files[row];
+		return rows[row].file;
 	}
 
+	/**
+	 * The tooltip for a row (model index): the link's target, or the file,
+	 * as a canonical path. Worked out the first time it's asked for.
+	 */
+	public String getToolTip(int row) {
+		if( row < 0 || row >= rows.length ) {
+			return null;
+		}
+		Row r = rows[row];
+		if( r.toolTip == null ) {
+			String tip = "";
+			try {
+				FileSource l = r.link ? r.file.getLinkedTo() : null;
+				tip = l != null ? l.getCanonicalPath() : r.file.getCanonicalPath();
+			} catch (IOException e) {
+				// no tooltip, as before
+			}
+			r.toolTip = tip;
+		}
+		return r.toolTip.isEmpty() ? null : r.toolTip;
+	}
 
 	public Object getValueAt(int row, int col) {
 		Object ret = null;
-		try {
-			FileSource f = files[row];
-			
-			String name = f.getName().trim();
-
-			FileSource l;
-			boolean readable = FileTableCellRenderer.isReadable(f);
-
-			switch (col) {
-			case 1:
-
-				if( !showExtention) {
-					int idx = name.lastIndexOf(".");
-					if( idx > 0 ) {
-						name = name.substring(0, idx);
-					}
-				}
-				ret = name;
-
-				break;
-			case 2:
-				ret = new Date(f.lastModified());
-				break;
-			case 3:
-				ret = f.isDirectory() ? "Dir" : "File";
-				l = f.getLinkedTo();
-				if( l != null ) {
-					ret = "->"+l.getCanonicalPath();
-					ret = "Link";
-				}
-
-
-				break;
-			case 4:
-				ret =  f.isDirectory() ? -1:f.length();
-				break;
-
-			case 0:
-
-				ret = f.isDirectory()?
-						readable? 
-								dirIcon
-								:
-									dirIconNoRead
-									:
-										readable?
-												getFileIconFor(f)
-												:
-													fileIconNoRead;				
-			default:
-				break;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			ret = e.getMessage();
+		Row r = rows[row];
+		if( r.error != null && col >= 2 ) {
+			return r.error;
 		}
-
+		switch (col) {
+		case 1:
+			String name = r.name;
+			if( !showExtention) {
+				int idx = name.lastIndexOf(".");
+				if( idx > 0 ) {
+					name = name.substring(0, idx);
+				}
+			}
+			ret = name;
+			break;
+		case 2:
+			ret = new Date(r.lastModified);
+			break;
+		case 3:
+			ret = r.link ? "Link" : r.directory ? "Dir" : "File";
+			break;
+		case 4:
+			ret = r.directory ? -1 : r.length;
+			break;
+		case 0:
+			ret = r.directory ?
+					(r.readable ? dirIcon : dirIconNoRead)
+					:
+					(r.readable ? iconFor(r) : fileIconNoRead);
+		default:
+			break;
+		}
 		return ret;
 	}
 
-
+	private Icon iconFor(Row r) {
+		if( r.icon == null ) {
+			r.icon = getFileIconFor(r.file);
+		}
+		return r.icon;
+	}
 
 	private Icon getFileIconFor(FileSource f) {
 		Icon ret = fileIcon;
@@ -215,10 +290,9 @@ public class FileTableModel extends AbstractTableModel {
 			} catch (IOException e) {
 			}
 		}
+
 		return ret;
 	}
-
-
 
 	public Class<?> getColumnClass(int col) {
 		Class<?> ret = String.class;
@@ -250,7 +324,7 @@ public class FileTableModel extends AbstractTableModel {
 
 	public void setValueAt(Object newName, int row, int col) {
 		if( col == 1 ) {
-			FileSource f = files[row];
+			FileSource f = rows[row].file;
 			if( !newName.equals(f.getName())) {
 				try {
 					// in its own folder, as the rename menu item does (not editable now, but kept right)
