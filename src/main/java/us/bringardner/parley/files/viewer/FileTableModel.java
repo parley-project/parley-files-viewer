@@ -212,6 +212,16 @@ public class FileTableModel extends AbstractTableModel {
 		return rows[row].file;
 	}
 
+	/** Whether the file in a row (model index) is a folder, as it was when the folder was loaded. */
+	public boolean isDirectory(int row) {
+		return rows[row].directory;
+	}
+
+	/** Whether the file in a row (model index) can be read, as its icon shows. */
+	public boolean isReadable(int row) {
+		return rows[row].readable;
+	}
+
 	/**
 	 * The tooltip for a row (model index): the link's target, or the file,
 	 * as a canonical path. Worked out the first time it's asked for.

@@ -32,6 +32,8 @@ import java.io.IOException;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 
 import us.bringardner.parley.files.FileSource;
 
@@ -60,8 +62,30 @@ public class FileComboBoxPanel extends JPanel {
 		FileSource parent = dir.getParentFile();
 		if( parent != null ) {
 			configCombo(parent);
-			JComboBox cb = new JComboBox(new FileComboBoxModel(parent,name,al));
+			FileComboBoxModel model = new FileComboBoxModel(parent,name,al);
+			JComboBox cb = new JComboBox(model);
 			cb.setPrototypeDisplayValue(name);
+			// the folders beside this one are listed when the drop-down is first opened
+			cb.addPopupMenuListener(new PopupMenuListener() {
+				@Override
+				public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+					model.load(()->{
+						if( cb.isPopupVisible() ) {
+							// again, sized for the folders now in it
+							cb.hidePopup();
+							cb.showPopup();
+						}
+					});
+				}
+
+				@Override
+				public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+				}
+
+				@Override
+				public void popupMenuCanceled(PopupMenuEvent e) {
+				}
+			});
 			add(cb);
 		} else {
 			add(new JLabel(dir.getAbsolutePath()));
