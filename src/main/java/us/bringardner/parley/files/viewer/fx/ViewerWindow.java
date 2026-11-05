@@ -237,7 +237,7 @@ public class ViewerWindow {
 		CheckMenuItem extensions = new CheckMenuItem("Show File Extensions");
 		extensions.selectedProperty().bindBidirectional(table.showExtensionsProperty());
 		view.getItems().addAll(hidden, extensions, new SeparatorMenuItem(),
-				item("Refresh", new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN), this::refresh));
+				item("Refresh", new KeyCodeCombination(KeyCode.R, KeyCombination.SHORTCUT_DOWN), this::refreshFromServer));
 		return menus.build(stage);
 	}
 
@@ -347,7 +347,7 @@ public class ViewerWindow {
 				item("Rename...", null, this::renameSelected),
 				item("Delete", null, this::deleteSelected),
 				new SeparatorMenuItem(),
-				item("Refresh", null, this::refresh));
+				item("Refresh", null, this::refreshFromServer));
 		table.getTableView().setContextMenu(menu);
 		table.getTableView().getSelectionModel().getSelectedItems().addListener(
 				(javafx.collections.ListChangeListener<FileEntry>) c->updateStatus());
@@ -481,6 +481,29 @@ public class ViewerWindow {
 
 	private void refresh() {
 		table.refresh();
+	}
+
+	/**
+	 * Refresh, as asked for: the folder shown is read from its file system again first (a remote
+	 * one is trusted for a while, see RemoteCaching), then shown. In the background: it asks the
+	 * server.
+	 */
+	private void refreshFromServer() {
+		FileSource dir = history.current();
+		if( dir == null ) {
+			refresh();
+			return;
+		}
+		Thread t = new Thread(()->{
+			try {
+				dir.refresh();
+			} catch (IOException e) {
+				// shown as it was known
+			}
+			Platform.runLater(this::refresh);
+		}, "Refresh "+dir.getName());
+		t.setDaemon(true);
+		t.start();
 	}
 
 	private void updateTitle() {
