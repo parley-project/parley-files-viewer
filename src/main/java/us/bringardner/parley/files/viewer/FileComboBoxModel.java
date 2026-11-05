@@ -27,100 +27,122 @@ package us.bringardner.parley.files.viewer;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.ComboBoxModel;
+import javax.swing.SwingWorker;
 import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListDataListener;
 
 import us.bringardner.parley.files.FileSource;
 
-@SuppressWarnings("rawtypes")
+/**
+ * One folder of the path bar: its name, and a drop-down of the other
+ * folders beside it. The folders are listed when the drop-down is first
+ * opened (see FileComboBoxPanel), in the background. Each folder of the path
+ * used to be listed as soon as the path bar was made, every time a folder was
+ * selected: a listing per level of the path, which for a remote folder is a
+ * round trip to the server or more each.
+ */
 public class FileComboBoxModel implements ComboBoxModel {
 
 	List<ListDataListener> listners = new ArrayList<ListDataListener>();
 	Object selected ;
 	private FileSource dir;
+	/** dir's sub folders, once listed; event thread only. */
 	private List<FileSource> list = new ArrayList<FileSource>();
 	private ActionListener al;
+	private boolean loading;
+	private boolean loaded;
 
 	public FileComboBoxModel(FileSource dir, String selectedName, ActionListener al) {
 		this.dir = dir;
 		this.al = al;
 		selected = selectedName;
-
-		new Thread(new Runnable() {
-
-			
-			public void run() {
-				try {
-					final FileSource[] list2 = FileComboBoxModel.this.dir.listFiles();
-					if ( list2 != null &&  list2.length > 0 ) {
-						for (FileSource f : list2) {
-							if(f.isDirectory()) {
-								FileComboBoxModel.this.list.add(f);
-							}
-						}
-						if( FileComboBoxModel.this.list.size() > 0 ) {
-							ListDataEvent event = new ListDataEvent(this, ListDataEvent.INTERVAL_ADDED, 0, FileComboBoxModel.this.list.size()-1) ;
-							for (ListDataListener l : listners) {
-								l.intervalAdded(event);
-							}
-						}
-					}
-				} catch(Throwable e) {
-
-				}
-			}
-		}).start();
-
 	}
 
+	/** Whether the sub folders have been listed. */
+	public boolean isLoaded() {
+		return loaded;
+	}
 
+	/**
+	 * Lists the sub folders in the background, once; then, on the event
+	 * thread, adds them and runs 'then'. Event thread.
+	 */
+	public void load(Runnable then) {
+		if( loaded || loading ) {
+			return;
+		}
+		loading = true;
+		new SwingWorker<List<FileSource>, Object>() {
+			@Override
+			protected List<FileSource> doInBackground() throws Exception {
+				List<FileSource> ret = new ArrayList<>();
+				FileSource[] list2 = dir.listFiles();
+				if ( list2 != null ) {
+					for (FileSource f : list2) {
+						if(f.isDirectory()) {
+							ret.add(f);
+						}
+					}
+				}
+				return ret;
+			}
 
+			@Override
+			protected void done() {
+				loading = false;
+				loaded = true;
+				try {
+					list = get();
+				} catch (Exception e) {
+					// as before: no folders to choose from
+				}
+				if( list.size() > 0 ) {
+					ListDataEvent event = new ListDataEvent(FileComboBoxModel.this, ListDataEvent.INTERVAL_ADDED, 0, list.size()-1) ;
+					for (ListDataListener l : new ArrayList<>(listners)) {
+						l.intervalAdded(event);
+					}
+				}
+				if( then != null ) {
+					then.run();
+				}
+			}
+		}.execute();
+	}
 
-	
 	public void removeListDataListener(ListDataListener arg0) {
 		listners.remove(arg0);
 	}
 
-	
 	public int getSize() {
 		return list.size();
 	}
 
-	
 	public Object getElementAt(int index) {
 		return list.get(index).getName();
 	}
 
-	
 	public void addListDataListener(ListDataListener arg0) {
 		listners.add(arg0);							
 	}
 
-	
+	/** A folder chosen from the drop-down: the one listed with that name (it used to list the folder again to find it). */
 	public void setSelectedItem(Object arg0) {
 		selected = arg0;				
-		if( al != null ) {
-			try {
-				String nm = arg0.toString();
-				for(FileSource f : dir.listFiles()) {
-					if( f.getName().equals(nm)) {
-						al.actionPerformed(new ActionEvent(f, 0, "Selected"));
-						break;
-					}
+		if( al != null && arg0 != null ) {
+			String nm = arg0.toString();
+			for(FileSource f : list) {
+				if( f.getName().equals(nm)) {
+					al.actionPerformed(new ActionEvent(f, 0, "Selected"));
+					break;
 				}
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
-
 		}
 	}
 
-	
 	public Object getSelectedItem() {
 		return selected;
 	}

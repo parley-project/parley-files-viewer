@@ -280,11 +280,20 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 		String shortName;
 		String displayName;
 		int id = nextNodId();
+		/**
+		 * Whether the folder can be opened (isReadable), worked out once, when
+		 * the node is made (in the background, by the workers that list the
+		 * tree). The tree's renderer used to ask on every paint, for every node
+		 * shown: for a remote folder, round trips to the server on the event
+		 * thread.
+		 */
+		final boolean readable;
 
 
 		public FileSourceTreeNode(FileSource dir) {
 			super(dir, true);
 			this.dir = dir;
+			this.readable = isReadable(dir);
 			shortName = displayName = dir.getName();
 			int idx = shortName.lastIndexOf(".");
 			if( idx > 0 ) {
@@ -321,32 +330,27 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 		 */
 		public Vector<TreeNode> getChildren() {
 			if( children == null) {
-				if( isTraversable() ) {
-					try {
-						FileSource[] kids = dir.listFiles();
-						if( kids != null) {
-							Arrays.sort(kids, new Comparator<FileSource>() {
-								@Override
-								public int compare(FileSource o1, FileSource o2) {
-									return o1.getName().compareToIgnoreCase(o2.getName());
-								}
-							});
-
-							for(FileSource kid : kids) {
-								if( kid.isDirectory()) {
-									boolean hide = kid.isHidden() || kid.getName().startsWith(".");
-									if( showHidden || !hide) {
-										add(new FileSourceTreeNode(kid));
-									}
-								}
-							}
-						}
-					} catch (IOException e) {
-						showError("", e);
-					}
+				try {
+					addAll(childNodes(this));
+				} catch (IOException e) {
+					showError("", e);
 				}
 			}
 			return children;
+		}
+
+		/** Whether the children have been loaded (getChildren() loads them). */
+		boolean childrenLoaded() {
+			return children != null;
+		}
+
+		/** Adds nodes made by childNodes(), if the children haven't been loaded meanwhile. Event thread. */
+		void addAll(List<FileSourceTreeNode> nodes) {
+			if( children == null ) {
+				for(FileSourceTreeNode n : nodes) {
+					add(n);
+				}
+			}
 		}
 
 		@Override
@@ -516,8 +520,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 						SwingUtilities.invokeLater(()->{
 							try {
 								factory.setCurrentDirectory(homeDir);
-								TreePath path2 = buildTreePath(homeDir);			
-								tree.setSelectionPath(path2);					
+								findInTree(homeDir, tree::setSelectionPath);
 								// Recent Files, as in the JavaFX viewer: the folder a window starts in
 								if( recentFiles != null ) {
 									recentFiles.addRecent(homeDir);
@@ -656,12 +659,32 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	 */
 	public void setTableModel(FileSource dir) {
 		setTableModel(new FileTableModel(dir, Collections.emptyList(), showHidden, showExtention));
+		loadTable(dir, false);
+	}
+
+	/**
+	 * Reads the table's folder again, refreshed, in the background (after a
+	 * change, or for new row heights); the rows shown stay until it's done.
+	 * It used to be read on the event thread (FileTableModel.resetIFile).
+	 */
+	void reloadTable() {
+		// before a folder is opened the table has no FileTableModel yet
+		if( getTable().getModel() instanceof FileTableModel ) {
+			loadTable(((FileTableModel) getTable().getModel()).getDir(), true);
+		}
+	}
+
+	/** Loads 'dir' into the table in the background, unless another folder is shown first. Event thread. */
+	private void loadTable(FileSource dir, boolean refreshFirst) {
 		final int generation = tableGeneration;
 		final boolean hidden = showHidden;
 		final boolean extention = showExtention;
 		new SwingWorker<List<FileTableModel.Row>, Object>() {
 			@Override
 			protected List<FileTableModel.Row> doInBackground() throws Exception {
+				if( refreshFirst ) {
+					dir.refresh();
+				}
 				return FileTableModel.load(dir, null, hidden);
 			}
 
@@ -1137,13 +1160,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		getTree().setFont(f);
 		setRowSize();
 		// before a folder is opened the table has no FileTableModel yet
-		if( getTable().getModel() instanceof FileTableModel ) {
-			try {
-				((FileTableModel) getTable().getModel()).resetIFile();
-			} catch (IOException e) {
-				// the rows keep their old height until the folder is opened again
-			}
-		}
+		reloadTable();
 		getTableScrollPane().getColumnHeader().setBackground(Theme.current().getHeader());
 	}
 
@@ -1275,8 +1292,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 							FileSourceTreeNode parent = (FileSourceTreeNode) path.getLastPathComponent();
 							parent.add(new FileSourceTreeNode(newDir));
 							((DefaultTreeModel)tree.getModel()).nodeStructureChanged(parent);
-							FileTableModel tableModel = (FileTableModel) getTable().getModel();
-							tableModel.resetIFile();
+							reloadTable();
 
 						} else {
 							showError("Could not create "+s+" in "+dir.getAbsolutePath(), null);
@@ -1702,7 +1718,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 							try {
 								for (FileSource f : sel.files) {
 									if(f.isDirectory()) {
-										setSelectionPath(buildTreePath(f));
+										selectInTree(f);
 									} else {
 										open(f);
 									}
@@ -1726,7 +1742,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 							try {
 								for (FileSource f : sel.files) {
 									if(f.isDirectory()) {
-										setSelectionPath(buildTreePath(f));
+										selectInTree(f);
 									} else {
 										openWith(f);
 									}
@@ -1911,8 +1927,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 								try {
 									FileSource newDir = factory.createFileSource(txt); 
 									if( newDir != null && newDir.isDirectory()) {
-										TreePath path = buildTreePath(newDir);
-										setSelectionPath(path);
+										selectInTree(newDir);
 									}
 								} catch (IOException er) {
 									showError("", er);
@@ -2105,18 +2120,14 @@ Panel.font = javax.swing.plaf.FontUIResource
 				if( idxs !=null && idxs.length>0) {
 					FileTableModel tm = (FileTableModel) table.getModel();
 					for(int row : idxs) {
-						FileSource file = tm.getFile(row);
-						if( file != null) {
-							try {
-								if(file.isDirectory()) {
-									boolean readable = isReadable(file);
-									if( !readable) {
-										lsm.removeSelectionInterval(row, row);
-									}
-								}
-							} catch (IOException e1) {
-								showError("Error in file selection",e1);								
-							}
+						if( row >= table.getRowCount() ) {
+							continue;   // a selection left from the folder shown before
+						}
+						// the selection's rows are the table's, which differ from the model's once sorted
+						int modelRow = table.convertRowIndexToModel(row);
+						// readable as the row shows it, read when the folder was loaded: no server round trip
+						if( tm.isDirectory(modelRow) && !tm.isReadable(modelRow) ) {
+							lsm.removeSelectionInterval(row, row);
 						}
 					}					
 				}
@@ -2187,10 +2198,10 @@ Panel.font = javax.swing.plaf.FontUIResource
 					for (FileSource f : list.files) {
 						try {
 							if( f.isDirectory()) {
-								final TreePath tp = buildTreePath(f);
-								setSelectionPath(tp);
-
-								capturedPath = tp;
+								findInTree(f, tp->{
+									setSelectionPath(tp);
+									capturedPath = tp;
+								});
 							} else {
 								open(f);
 							}
@@ -2347,7 +2358,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 				boolean readable = true;
 				if (value instanceof FileSourceTreeNode) {
 					FileSourceTreeNode node = (FileSourceTreeNode) value;
-					readable = isReadable(node.dir);
+					readable = node.readable;
 					if( !readable) {
 						this.setEnabled(false);
 					} else {
@@ -2378,7 +2389,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 					Object comp = path.getLastPathComponent();
 					if (comp instanceof FileSourceTreeNode) {
 						FileSourceTreeNode file = (FileSourceTreeNode) comp;
-						if(! isReadable(file.dir)) {
+						if(! file.readable) {
 							tsm.removeSelectionPath(path);
 						}
 					}
@@ -2515,16 +2526,13 @@ Panel.font = javax.swing.plaf.FontUIResource
 				Object obj = e.getSource();
 				if (obj != null && obj instanceof FileSource) {
 					FileSource f = (FileSource) obj;
-					try {
-						TreePath path = buildTreePath(f);
-						FileSourceTreeNode lastNode = (FileSourceTreeNode) path.getLastPathComponent();
-
-						FileSourceTreeLoadingWorking worker = new FileSourceTreeLoadingWorking(( FileSourceTreeNode )lastNode, path, getTree());
-						worker.execute();
-
-					} catch (IOException e1) {
-						showError("", e1);
-					} 
+					findInTree(f, path->{
+						if( path != null ) {
+							FileSourceTreeNode lastNode = (FileSourceTreeNode) path.getLastPathComponent();
+							FileSourceTreeLoadingWorking worker = new FileSourceTreeLoadingWorking(lastNode, path, getTree());
+							worker.execute();
+						}
+					});
 
 
 				}				
@@ -2548,6 +2556,143 @@ Panel.font = javax.swing.plaf.FontUIResource
 		return nodes.isEmpty() ? null : new TreePath(nodes.toArray());
 	}
 
+	/**
+	 * The nodes for a folder's sub folders, sorted, without the hidden ones
+	 * unless they're shown; none if it can't be opened. Lists the folder: it
+	 * may be slow and can run on any thread. It doesn't touch the tree.
+	 */
+	List<FileSourceTreeNode> childNodes(FileSourceTreeNode node) throws IOException {
+		List<FileSourceTreeNode> ret = new ArrayList<>();
+		if( !node.isTraversable() ) {
+			return ret;
+		}
+		FileSource[] kids = node.dir.listFiles();
+		if( kids != null) {
+			Arrays.sort(kids, new Comparator<FileSource>() {
+				@Override
+				public int compare(FileSource o1, FileSource o2) {
+					return o1.getName().compareToIgnoreCase(o2.getName());
+				}
+			});
+			for(FileSource kid : kids) {
+				if( kid.isDirectory()) {
+					boolean hide = kid.isHidden() || kid.getName().startsWith(".");
+					if( showHidden || !hide) {
+						ret.add(new FileSourceTreeNode(kid));
+					}
+				}
+			}
+		}
+		return ret;
+	}
+
+	/** Selects (and opens) folder f in the tree, once its path has been found; see findInTree. */
+	public void selectInTree(FileSource f) {
+		findInTree(f, this::setSelectionPath);
+	}
+
+	/**
+	 * Finds the tree path of folder f, loading the folders on the way that
+	 * haven't been opened yet, and gives it to 'then' on the event thread
+	 * (null if f isn't under the tree's root). The folders are listed in the
+	 * background: buildTreePath lists them on the calling thread, which on the
+	 * event thread froze the window for each folder on a remote path.
+	 */
+	public void findInTree(FileSource f, java.util.function.Consumer<TreePath> then) {
+		new SwingWorker<Object, Object>() {
+			/** f and its parents, the top one first. */
+			private final List<FileSource> chain = new ArrayList<>();
+			/** The nodes loaded here, by the folder they belong to. */
+			private final Map<FileSourceTreeNode, List<FileSourceTreeNode>> loaded = new HashMap<>();
+
+			@Override
+			protected Object doInBackground() throws Exception {
+				for(FileSource p = f; p != null; p = p.getParentFile()) {
+					chain.add(0, p);
+				}
+				FileSourceTreeNode[] from = new FileSourceTreeNode[1];
+				int[] at = new int[1];
+				SwingUtilities.invokeAndWait(()->{
+					at[0] = walk(chain, null, from);
+				});
+				// load each folder on the way that hasn't been opened, down to f
+				FileSourceTreeNode node = from[0];
+				for(int idx = at[0]; node != null && idx < chain.size()-1; idx++) {
+					List<FileSourceTreeNode> kids = childNodes(node);
+					loaded.put(node, kids);
+					node = null;
+					for(FileSourceTreeNode k : kids) {
+						if( k.dir.equals(chain.get(idx+1))) {
+							node = k;
+						}
+					}
+				}
+				return null;
+			}
+
+			@Override
+			protected void done() {
+				TreePath path = null;
+				try {
+					get();
+					FileSourceTreeNode[] found = new FileSourceTreeNode[1];
+					if( walk(chain, loaded, found) == chain.size()-1 && found[0] != null ) {
+						path = getPath(found[0]);
+					}
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+				} catch (java.util.concurrent.ExecutionException e) {
+					showError("Finding "+f.getAbsolutePath(), e.getCause());
+				}
+				then.accept(path);
+			}
+		}.execute();
+	}
+
+	/**
+	 * Follows 'chain' (a folder and its parents, the top one first) down the
+	 * tree from its root, through the nodes already loaded; with 'loaded',
+	 * adds those nodes to the folders that haven't been loaded first. Event
+	 * thread; never lists a folder.
+	 *
+	 * @param last set to the last node reached (null if the root isn't on the chain)
+	 * @return the index in 'chain' of that node
+	 */
+	private int walk(List<FileSource> chain, Map<FileSourceTreeNode, List<FileSourceTreeNode>> loaded, FileSourceTreeNode[] last) {
+		FileSourceTreeNode node = (FileSourceTreeNode) getTree().getModel().getRoot();
+		last[0] = null;
+		int idx = chain.indexOf(node.dir);
+		if( idx < 0 ) {
+			return -1;
+		}
+		last[0] = node;
+		while( idx < chain.size()-1 ) {
+			if( !node.childrenLoaded() ) {
+				List<FileSourceTreeNode> kids = loaded == null ? null : loaded.get(node);
+				if( kids == null ) {
+					return idx;
+				}
+				node.addAll(kids);
+				((DefaultTreeModel) getTree().getModel()).nodeStructureChanged(node);
+			}
+			FileSourceTreeNode next = null;
+			for(int k = 0; k < node.getChildCount(); k++) {
+				TreeNode t = node.getChildAt(k);
+				if( t instanceof FileSourceTreeNode && ((FileSourceTreeNode) t).dir.equals(chain.get(idx+1))) {
+					next = (FileSourceTreeNode) t;
+					break;
+				}
+			}
+			if( next == null ) {
+				return idx;
+			}
+			node = next;
+			last[0] = node;
+			idx++;
+		}
+		return idx;
+	}
+
 	public FileSourceTreeNode findNode(FileSource file) throws IOException {
 		FileSource parent = file.getParentFile();
 		if( parent == null ) {
@@ -2555,6 +2700,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			if( tmp.dir.equals(file)) {
 				return tmp;
 			}
+			return null;   // above the tree's root
 		}
 		//  this is my parent node so my node MUST be a child of it
 		FileSourceTreeNode pnode = findNode(parent);
@@ -2877,7 +3023,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			for(FileSource f : getSelectedFromTable().files) {
 				if( f.isDirectory() ) {
 					if( foldersToo ) {
-						setSelectionPath(buildTreePath(f));
+						selectInTree(f);
 						return;
 					}
 				} else {
@@ -3272,8 +3418,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 					}
 				}
 
-				FileTableModel tableModel = (FileTableModel) getTable().getModel();
-				tableModel.resetIFile();
+				reloadTable();
 
 			} catch (IOException e) {
 				showError( "Error in delete",e);
