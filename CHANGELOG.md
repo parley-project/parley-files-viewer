@@ -2,6 +2,16 @@
 
 ## parley-files-viewer 2.0.0 (unreleased)
 
+### Faster over FTP (2026-11-04)
+
+- **Remote folders are trusted for 30 seconds** (`RemoteCaching`): both viewers set parley-files-ftp's
+  `parley.files.ftp.attributeCacheTtl` to `30s` unless it was given on the command line. Its own default (2 seconds)
+  meant going back to a folder, or opening one shown a few seconds earlier, listed it again. Changes made in the viewer
+  are seen at once; a change someone else makes shows up within 30 seconds, or at once with Refresh.
+- **The JavaFX viewer's Refresh reads the folder from its file system again** before showing it (it showed what was
+  already known). The Swing viewer's already did.
+- With parley-files-ftp's listing changes, a folder costs two listings instead of one per entry plus one.
+
 ### Changed (2026-11-02: preference keys, To-Do 2.19)
 
 - **The Swing and JavaFX viewers keep every preference in one place**, `/us/bringardner/parley/files/viewer`

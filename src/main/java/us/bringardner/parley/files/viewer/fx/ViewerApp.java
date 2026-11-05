@@ -30,6 +30,8 @@ public class ViewerApp extends Application {
 
 	@Override
 	public void start(Stage stage) throws Exception {
+		// remote folders are trusted for a while, so going back to one doesn't list it again
+		us.bringardner.parley.files.viewer.RemoteCaching.install();
 		// the theme and font chosen in Settings (the Swing viewer's too), and the Parley icon
 		us.bringardner.fx.dialog.SettingsDialog.load(FxLook.prefs());
 		FxLook.dockIcon();

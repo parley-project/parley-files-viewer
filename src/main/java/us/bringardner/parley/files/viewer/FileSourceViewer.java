@@ -1168,6 +1168,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+		// remote folders are trusted for a while, so going back to one doesn't list it again
+		RemoteCaching.install();
 		// on macOS each window's menus at the top of the screen, under the application's name
 		StandardMenus.useScreenMenuBar(APP_NAME);
 		// A GraalVM native image has no java.home, and AWT needs one (font configuration): use the
