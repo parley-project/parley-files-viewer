@@ -49,6 +49,25 @@ public class FileTableModelTest {
 		assertEquals(List.of("File", "Link", "Dir"), column(m, 3));
 		assertEquals(List.of(5L, -1L, -1L), column(m, 4));
 		assertEquals(FileTableModel.dirIcon, m.getValueAt(2, 0));
+		assertEquals(FileTableModel.dirIcon, m.getValueAt(1, 0), "a link to a folder beside it can be opened");
+	}
+
+	@Test
+	public void linksThatLoopCantBeOpened() throws Exception {
+		Path inner = Files.createDirectories(dir.resolve("a/b"));
+		Files.write(inner.resolve("f.txt"), new byte[1]);
+		Files.createSymbolicLink(inner.resolve("toFile"), inner.resolve("f.txt"));
+		Files.createSymbolicLink(inner.resolve("toSibling"), dir.resolve("a"));       // up one: a loop
+		Files.createSymbolicLink(inner.resolve("toSelf"), Path.of("."));              // its own folder: a loop
+		Files.createDirectories(dir.resolve("other"));
+		Files.createSymbolicLink(inner.resolve("toOther"), dir.resolve("other"));     // elsewhere: fine
+		FileSource b = FileSourceFactory.getDefaultFactory().createFileSource(inner.toString());
+		FileTableModel m = new FileTableModel(b, FileTableModel.load(b, null, true), true, true);
+		assertEquals(List.of("f.txt", "toFile", "toOther", "toSelf", "toSibling"), column(m, 1));
+		assertEquals(FileTableModel.dirIcon, m.getValueAt(2, 0));
+		assertEquals(FileTableModel.dirIconNoRead, m.getValueAt(3, 0));
+		assertEquals(FileTableModel.dirIconNoRead, m.getValueAt(4, 0));
+		assertTrue(m.getValueAt(1, 0) != FileTableModel.fileIconNoRead, "a link to a file can be opened");
 	}
 
 	@Test

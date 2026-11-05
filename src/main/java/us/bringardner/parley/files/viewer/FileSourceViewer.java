@@ -362,7 +362,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 					if((ret=dir.canRead()) ) {
 						FileSource link = dir.getLinkedTo();
 						if( link != null) {
-							ret = !link.isChildOfMine(dir);				
+							ret = !FileTableCellRenderer.loops(dir, link);
 						}
 					}
 				} catch (IOException e) {
@@ -2495,7 +2495,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			if( ret) {
 				FileSource link = dir.getLinkedTo();
 				if( link != null) {
-					ret = !link.isChildOfMine(dir);				
+					ret = !FileTableCellRenderer.loops(dir, link);
 				}
 			}
 		} catch (Throwable e) {

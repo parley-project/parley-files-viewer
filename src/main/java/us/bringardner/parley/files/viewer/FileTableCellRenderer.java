@@ -28,6 +28,7 @@ package us.bringardner.parley.files.viewer;
 import javax.swing.UIManager;
 import us.bringardner.swing.gradient.Theme;
 import java.awt.Component;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -57,6 +58,23 @@ public class FileTableCellRenderer implements TableCellRenderer {
 		
 	}
 
+	/**
+	 * Whether the link 'dir' leads back to the folder it's in, or to one
+	 * above it: opening it opens the same folders again, without end, so
+	 * the viewer treats it as one that can't be read.
+	 * <p>
+	 * The check used to be link.isChildOfMine(dir): whether the link is
+	 * inside its own target. It always is (the link's canonical path is its
+	 * target's), so every link, to a file or to any folder, was shown as
+	 * unreadable and couldn't be opened in the tree.
+	 *
+	 * @param link dir.getLinkedTo()
+	 */
+	public static boolean loops(FileSource dir, FileSource link) throws IOException {
+		FileSource here = dir.getParentFile();
+		return here != null && link.isChildOfMine(here);
+	}
+
 	public static boolean isReadable(FileSource dir) {
 		boolean ret = true;
 		try {
@@ -64,7 +82,7 @@ public class FileTableCellRenderer implements TableCellRenderer {
 			if( ret) {
 				FileSource link = dir.getLinkedTo();
 				if( link != null) {
-					ret = !link.isChildOfMine(dir);				
+					ret = !loops(dir, link);
 				}
 			}
 		} catch (Throwable e) {
