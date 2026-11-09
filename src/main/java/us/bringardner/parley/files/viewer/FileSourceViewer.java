@@ -519,7 +519,9 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 						final FileSource homeDir = tmpDir;
 						SwingUtilities.invokeLater(()->{
 							try {
-								factory.setCurrentDirectory(homeDir);
+								// (the window's own start folder: the factory may be shared, and library code
+								// never changes the state of a factory it didn't create, To-Do 18.6/18.7)
+								startFolder = homeDir;
 								findInTree(homeDir, tree::setSelectionPath);
 								// Recent Files, as in the JavaFX viewer: the folder a window starts in
 								if( recentFiles != null ) {
@@ -2981,6 +2983,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 	private RecentFileMenu recentFiles;
 	/** The folder a window opened from Recent Files starts in, instead of the saved start folder. */
 	private FileSource startAt;
+	/** The folder this window started in (its home or saved start location), once the tree has loaded */
+	private volatile FileSource startFolder;
 
 	/** The text field with the focus, if one has it. */
 	private static javax.swing.text.JTextComponent focusedText() {
@@ -3128,7 +3132,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 		try {
 			if( cwd == null ) {
-				cwd = factory.getCurrentDirectory();
+				// the folder this window started in, else the factory's current one
+				cwd = startFolder != null ? startFolder : factory.getCurrentDirectory();
 			}
 			
 			console.startIn(cwd);

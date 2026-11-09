@@ -25,6 +25,7 @@
  */
 package us.bringardner.parley.files.viewer.test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
@@ -52,6 +53,26 @@ public class TestViewer {
 			viewer.setup(FileSourceFactory.fileProxyFactory, true);
 			viewer.show();
 			assertTrue(viewer.getFrame().isShowing());
+		} finally {
+			if( viewer.getFrame() != null ) {
+				viewer.getFrame().dispose();
+			}
+		}
+	}
+
+	/** It starts in the home folder without moving the (shared) factory's current directory (To-Do 18.7) */
+	@Test
+	public void theViewerLeavesTheFactorysCurrentDirectory() throws Exception {
+		assumeFalse(GraphicsEnvironment.isHeadless(), "needs a display");
+		String before = FileSourceFactory.fileProxyFactory.getCurrentDirectory().getAbsolutePath();
+		FileSourceViewer viewer = new FileSourceViewer();
+		try {
+			viewer.setup(FileSourceFactory.fileProxyFactory, true);
+			viewer.show();
+			// the tree loads in the background, then picks the start folder on the event thread
+			Thread.sleep(3000);
+			javax.swing.SwingUtilities.invokeAndWait(() -> { });
+			assertEquals(before, FileSourceFactory.fileProxyFactory.getCurrentDirectory().getAbsolutePath());
 		} finally {
 			if( viewer.getFrame() != null ) {
 				viewer.getFrame().dispose();
