@@ -2,6 +2,14 @@
 
 ## parley-files-viewer 2.0.0 (unreleased)
 
+### Removed (2026-11-12: the JavaFX viewer)
+
+- The JavaFX viewer (`us.bringardner.parley.files.viewer.fx`, started by `Launcher`) is no longer
+  part of parley-files-viewer, with its tests, its stylesheet and its libraries (JavaFX, RichTextFX,
+  fx-widgets, parley-files-fx). The viewer is the Swing one. The tag `javafx-final` is the last
+  commit that has the JavaFX viewer, as it was. Entries below that speak of the JavaFX viewer
+  describe it as it was then.
+
 ### Changed (2026-11-12: the native image's settings redone, To-Do 19.5)
 
 - **Native image**: the recorded `reachability-metadata.json` no longer names the viewer's or
