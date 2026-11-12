@@ -7,6 +7,69 @@
       "type": "char[]"
     },
     {
+      "type": "com.github.javakeyring.internal.freedesktop.FreedesktopKeyringBackend",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.github.javakeyring.internal.kde.KWalletBackend",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.github.javakeyring.internal.osx.ModernOsxKeychainBackend",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.github.javakeyring.internal.osx.OsxKeychainBackend",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.github.javakeyring.internal.windows.WinCredentialStoreBackend",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.ML_KEM_Impls$K3",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.crypto.provider.ML_KEM_Impls$KPG3",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.sun.java.swing.plaf.windows.WindowsPopupWindow",
       "jniAccessible": true
     },
@@ -325,6 +388,24 @@
       "type": "com.sun.jna.win32.DLLCallback"
     },
     {
+      "type": "com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "com.sun.org.apache.xerces.internal.jaxp.DocumentBuilderFactoryImpl",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
       "type": "com.sun.swing.internal.plaf.basic.resources.basic"
     },
     {
@@ -399,6 +480,12 @@
           "name": "height"
         },
         {
+          "name": "isPacked"
+        },
+        {
+          "name": "name"
+        },
+        {
           "name": "parent"
         },
         {
@@ -424,6 +511,10 @@
         },
         {
           "name": "getLocationOnScreen_NoTreeLock",
+          "parameterTypes": []
+        },
+        {
+          "name": "getParent_NoClientCode",
           "parameterTypes": []
         },
         {
@@ -462,6 +553,15 @@
           "parameterTypes": [
             "long"
           ]
+        }
+      ]
+    },
+    {
+      "type": "java.awt.Desktop$Action",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "OPEN"
         }
       ]
     },
@@ -555,6 +655,16 @@
       "fields": [
         {
           "name": "undecorated"
+        }
+      ]
+    },
+    {
+      "type": "java.awt.GraphicsEnvironment",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "isHeadless",
+          "parameterTypes": []
         }
       ]
     },
@@ -763,13 +873,28 @@
           "name": "VK_F10"
         },
         {
+          "name": "VK_F12"
+        },
+        {
           "name": "VK_F2"
+        },
+        {
+          "name": "VK_F4"
+        },
+        {
+          "name": "VK_F5"
         },
         {
           "name": "VK_F6"
         },
         {
+          "name": "VK_F7"
+        },
+        {
           "name": "VK_F8"
+        },
+        {
+          "name": "VK_F9"
         },
         {
           "name": "VK_H"
@@ -836,6 +961,9 @@
         },
         {
           "name": "extendedKeyCode"
+        },
+        {
+          "name": "isProxyActive"
         },
         {
           "name": "keyChar"
@@ -1138,6 +1266,16 @@
         {
           "name": "<init>",
           "parameterTypes": [
+            "int",
+            "int",
+            "int",
+            "int"
+          ]
+        },
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "int",
             "int",
             "int",
             "int",
@@ -1542,6 +1680,12 @@
           "parameterTypes": [
             "java.lang.String"
           ]
+        },
+        {
+          "name": "load",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
         }
       ]
     },
@@ -1552,11 +1696,35 @@
         {
           "name": "currentThread",
           "parameterTypes": []
+        },
+        {
+          "name": "yield",
+          "parameterTypes": []
         }
       ]
     },
     {
-      "type": "java.lang.Throwable"
+      "type": "java.lang.Throwable",
+      "methods": [
+        {
+          "name": "addSuppressed",
+          "parameterTypes": [
+            "java.lang.Throwable"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.UnsatisfiedLinkError",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
     },
     {
       "type": "java.lang.Void",
@@ -1738,6 +1906,10 @@
           "parameterTypes": [
             "java.lang.Object"
           ]
+        },
+        {
+          "name": "clear",
+          "parameterTypes": []
         }
       ]
     },
@@ -1777,6 +1949,46 @@
     },
     {
       "type": "java.util.Locale[]"
+    },
+    {
+      "type": "javax.crypto.KEM",
+      "methods": [
+        {
+          "name": "getInstance",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        },
+        {
+          "name": "newDecapsulator",
+          "parameterTypes": [
+            "java.security.PrivateKey"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "javax.crypto.KEM$Decapsulator",
+      "methods": [
+        {
+          "name": "decapsulate",
+          "parameterTypes": [
+            "byte[]"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "javax.crypto.KEM$Encapsulated"
+    },
+    {
+      "type": "javax.crypto.KEM$Encapsulator"
+    },
+    {
+      "type": "javax.imageio.spi.ImageReaderSpi"
+    },
+    {
+      "type": "javax.imageio.spi.ImageWriterSpi"
     },
     {
       "type": "javax.swing.Popup$HeavyWeightWindow",
@@ -1839,6 +2051,23 @@
           "name": "createUI",
           "parameterTypes": [
             "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "javax.swing.plaf.basic.BasicOptionPaneUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        },
+        {
+          "name": "loadActionMap",
+          "parameterTypes": [
+            "javax.swing.plaf.basic.LazyActionMap"
           ]
         }
       ]
@@ -1911,6 +2140,12 @@
           "name": "createUI",
           "parameterTypes": [
             "javax.swing.JComponent"
+          ]
+        },
+        {
+          "name": "loadActionMap",
+          "parameterTypes": [
+            "javax.swing.plaf.basic.LazyActionMap"
           ]
         }
       ]
@@ -1994,6 +2229,17 @@
     },
     {
       "type": "javax.swing.plaf.metal.MetalMenuBarUI",
+      "methods": [
+        {
+          "name": "createUI",
+          "parameterTypes": [
+            "javax.swing.JComponent"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "javax.swing.plaf.metal.MetalPopupMenuSeparatorUI",
       "methods": [
         {
           "name": "createUI",
@@ -2098,6 +2344,9 @@
       "type": "org.apache.logging.log4j.spi.Provider"
     },
     {
+      "type": "short"
+    },
+    {
       "type": "sun.awt.AWTAutoShutdown",
       "jniAccessible": true,
       "methods": [
@@ -2177,6 +2426,28 @@
       "jniAccessible": true,
       "methods": [
         {
+          "name": "awtLock",
+          "parameterTypes": []
+        },
+        {
+          "name": "awtLockNotify",
+          "parameterTypes": []
+        },
+        {
+          "name": "awtLockNotifyAll",
+          "parameterTypes": []
+        },
+        {
+          "name": "awtLockWait",
+          "parameterTypes": [
+            "long"
+          ]
+        },
+        {
+          "name": "awtUnlock",
+          "parameterTypes": []
+        },
+        {
           "name": "isTouchKeyboardAutoShowEnabled",
           "parameterTypes": []
         }
@@ -2247,6 +2518,121 @@
           "parameterTypes": [
             "boolean"
           ]
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.X11.XBaseWindow",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "window"
+        }
+      ],
+      "methods": [
+        {
+          "name": "getWindow",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.X11.XContentWindow"
+    },
+    {
+      "type": "sun.awt.X11.XDesktopPeer",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "supportedActions"
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.X11.XDialogPeer"
+    },
+    {
+      "type": "sun.awt.X11.XErrorHandlerUtil",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "globalErrorHandler",
+          "parameterTypes": [
+            "long",
+            "long"
+          ]
+        },
+        {
+          "name": "init",
+          "parameterTypes": [
+            "long"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.X11.XFramePeer"
+    },
+    {
+      "type": "sun.awt.X11.XToolkit",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "modLockIsShiftLock"
+        },
+        {
+          "name": "numLockMask"
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.X11.XWindow",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "drawState"
+        },
+        {
+          "name": "graphicsConfig"
+        },
+        {
+          "name": "target"
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.X11.XWindowPeer"
+    },
+    {
+      "type": "sun.awt.X11GraphicsConfig",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "aData"
+        },
+        {
+          "name": "bitsPerPixel"
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.X11GraphicsDevice",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "addDoubleBufferVisual",
+          "parameterTypes": [
+            "int"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "sun.awt.X11InputMethodBase",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "pData"
         }
       ]
     },
@@ -3501,6 +3887,33 @@
       ]
     },
     {
+      "type": "sun.java2d.xr.XRBackendNative",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "FMTPTR_A8"
+        },
+        {
+          "name": "FMTPTR_ARGB32"
+        },
+        {
+          "name": "MASK_XIMG"
+        }
+      ]
+    },
+    {
+      "type": "sun.java2d.xr.XRSurfaceData",
+      "jniAccessible": true,
+      "fields": [
+        {
+          "name": "picture"
+        },
+        {
+          "name": "xid"
+        }
+      ]
+    },
+    {
       "type": "sun.launcher.LauncherHelper",
       "jniAccessible": true,
       "fields": [
@@ -3561,6 +3974,35 @@
       ]
     },
     {
+      "type": "sun.security.provider.JavaKeyStore$DualFormatJKS",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.JavaKeyStore$JKS",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.NativePRNG",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.security.SecureRandomParameters"
+          ]
+        }
+      ]
+    },
+    {
       "type": "sun.security.provider.SHA",
       "methods": [
         {
@@ -3571,6 +4013,33 @@
     },
     {
       "type": "sun.security.provider.SHA2$SHA256",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA3$SHA256",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA3$SHA512",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "sun.security.provider.SHA5$SHA512",
       "methods": [
         {
           "name": "<init>",
@@ -3714,6 +4183,18 @@
       ]
     },
     {
+      "type": "sun.security.x509.SubjectAlternativeNameExtension",
+      "methods": [
+        {
+          "name": "<init>",
+          "parameterTypes": [
+            "java.lang.Boolean",
+            "java.lang.Object"
+          ]
+        }
+      ]
+    },
+    {
       "type": "sun.security.x509.SubjectKeyIdentifierExtension",
       "methods": [
         {
@@ -3724,6 +4205,18 @@
           ]
         }
       ]
+    },
+    {
+      "type": "sun.text.resources.FormatData"
+    },
+    {
+      "type": "sun.text.resources.FormatData_en"
+    },
+    {
+      "type": "sun.text.resources.FormatData_en_US"
+    },
+    {
+      "type": "sun.text.resources.JavaTimeSupplementary"
     },
     {
       "type": "sun.text.resources.cldr.FormatData"
@@ -3747,389 +4240,28 @@
       "type": "sun.util.resources.cldr.CurrencyNames_en_US"
     },
     {
-      "type": "us.bringardner.fsh.ConsoleFrame"
-    },
-    {
-      "type": "us.bringardner.fsh.ConsolePanel"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Alias"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Bg"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Bind"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.BracketTest"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Builtin"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Caller"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Cd"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Clear"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Colon"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.CommandCmd"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Compgen"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Complete"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Compopt"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Connect"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Cp"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Dirs"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Disown"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Dot"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Echo"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Enable"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Eval"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Exec"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Exit",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Export"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Expr"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.False"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Fc"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Fg"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Find"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Getopts"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Hash"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Help"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.History"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Jobs"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Kill"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Let"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Ln"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Logout"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Ls"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Mapfile"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Mkdir"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Mv"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Popd"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Printf"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Pushd"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Pwd"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Read"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Readarray"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Readonly"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Return"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Rm"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Set"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Shift"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Shopt"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Sleep"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Source"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Suspend"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Test"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Times"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Touch"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Trap"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.True"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Type"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Ulimit"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Umask"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Unalias"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Unset"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Wait"
-    },
-    {
-      "type": "us.bringardner.fsh.commands.Wc"
-    },
-    {
-      "type": "us.bringardner.fsh.jna.WindowsOps$K"
-    },
-    {
-      "type": "us.bringardner.parley.core.ParleyLogger",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.parley.files.Backup"
-    },
-    {
-      "type": "us.bringardner.parley.files.fileproxy.FileProxyFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.parley.files.ftp.FtpFileSourceFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.parley.files.ftp.FtpsFileSourceFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.parley.files.jdbcfile.JdbcFileSourceFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.parley.files.memory.MemoryFileSourceFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.parley.files.sftp.SftpFileSourceFactory",
-      "methods": [
-        {
-          "name": "<init>",
-          "parameterTypes": []
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.parley.files.swing.ConnectionSettingsPanel"
-    },
-    {
-      "type": "us.bringardner.parley.files.swing.FactoryPropertiesDialog"
-    },
-    {
-      "type": "us.bringardner.parley.files.viewer.ActivityLayer"
-    },
-    {
-      "type": "us.bringardner.parley.files.viewer.CopyProgressPanel"
-    },
-    {
-      "type": "us.bringardner.parley.files.viewer.FileComboBoxPanel"
-    },
-    {
       "type": "us.bringardner.parley.files.viewer.FileSourceViewer",
-      "jniAccessible": true,
-      "methods": [
-        {
-          "name": "main",
-          "parameterTypes": [
-            "java.lang.String[]"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "us.bringardner.parley.files.viewer.FileSourceViewer$29"
-    },
-    {
-      "type": "us.bringardner.parley.files.viewer.SearchFrame"
-    },
-    {
-      "type": "us.bringardner.parley.files.viewer.SizeEditPanel"
-    },
-    {
-      "type": "us.bringardner.swing.datetime.DateTimeCombo"
-    },
-    {
-      "type": "us.bringardner.swing.dialog.FontDialog"
-    },
-    {
-      "type": "us.bringardner.swing.dialog.FontDialog$FontRenderer"
-    },
-    {
-      "type": "us.bringardner.swing.dialog.MessageDialog"
-    },
-    {
-      "type": "us.bringardner.swing.gradient.GradientButton"
-    },
-    {
-      "type": "us.bringardner.swing.gradient.GradientPanel"
-    },
-    {
-      "type": "us.bringardner.swing.ui.ScrollBarUI",
-      "methods": [
-        {
-          "name": "createUI",
-          "parameterTypes": [
-            "javax.swing.JComponent"
-          ]
-        }
-      ]
+      "jniAccessible": true
     },
     {
       "type": "void"
-    },
-    {
-      "type": {
-        "proxy": [
-          "us.bringardner.parley.files.viewer.registry.WindowsRegistry$Ole32"
-        ]
-      }
-    },
-    {
-      "type": {
-        "proxy": [
-          "us.bringardner.parley.files.viewer.registry.WindowsRegistry$Shell32"
-        ]
-      }
-    },
-    {
-      "type": {
-        "proxy": [
-          "us.bringardner.parley.files.viewer.registry.WindowsRegistry$Shlwapi"
-        ]
-      }
     }
   ],
   "resources": [
     {
-      "glob": "META-INF/parley/us.bringardner.parley.core.ParleyLogger.properties"
+      "glob": "META-INF/services/java.awt.im.spi.InputMethodDescriptor"
     },
     {
-      "glob": "META-INF/services/java.awt.im.spi.InputMethodDescriptor"
+      "glob": "META-INF/services/java.net.spi.InetAddressResolverProvider"
+    },
+    {
+      "glob": "META-INF/services/java.net.spi.URLStreamHandlerProvider"
+    },
+    {
+      "glob": "META-INF/services/java.nio.channels.spi.SelectorProvider"
+    },
+    {
+      "glob": "META-INF/services/java.nio.charset.spi.CharsetProvider"
     },
     {
       "glob": "META-INF/services/java.time.zone.ZoneRulesProvider"
@@ -4138,46 +4270,40 @@
       "glob": "META-INF/services/java.util.prefs.PreferencesFactory"
     },
     {
-      "glob": "META-INF/services/us.bringardner.parley.files.FileSourceFactory"
+      "glob": "META-INF/services/javax.imageio.spi.ImageInputStreamSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageOutputStreamSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageReaderSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageTranscoderSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.imageio.spi.ImageWriterSpi"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.parsers.DocumentBuilderFactory"
+    },
+    {
+      "glob": "META-INF/services/javax.xml.transform.TransformerFactory"
+    },
+    {
+      "glob": "com/sun/jna/linux-x86-64/libjnidispatch.so"
     },
     {
       "glob": "com/sun/jna/win32-x86-64/jnidispatch.dll"
     },
     {
-      "glob": "us/bringardner/parley/core/ParleyLogger.properties"
+      "glob": "libAdvapi32.so"
     },
     {
-      "glob": "us/bringardner/parley/files/viewer/icons/Cancel30x30.png"
+      "glob": "linux-x86-64/libAdvapi32.so"
     },
     {
-      "glob": "us/bringardner/parley/files/viewer/icons/DnArrow20x20.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/Globe25x25.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/UpArrow20x20.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/eye_closed30x30.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/fileicon_20.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/fileicon_not_readable_20.png"
-    },
-    {
-      "glob": "us/bringardner/parley/files/viewer/icons/sweep_clear30x30.png"
-    },
-    {
-      "glob": "us/bringardner/swing/icons/Error100x100.png"
-    },
-    {
-      "glob": "us/bringardner/swing/icons/Globe100x100.png"
-    },
-    {
-      "glob": "us/bringardner/swing/icons/Warning100x100.png"
+      "glob": "org/slf4j/impl/StaticLoggerBinder.class"
     },
     {
       "module": "java.base",
@@ -4206,6 +4332,134 @@
     {
       "module": "java.desktop",
       "glob": "com/sun/swing/internal/plaf/metal/resources/metal_en_US.properties"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/basic/icons/image-delayed.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/basic/icons/image-failed.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/image-delayed.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/image-failed.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/close-pressed.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/close.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/collapsed-rtl.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/collapsed.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/computer.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/directory.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/error.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/expanded.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/file.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/floppy.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/hardDrive.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/homeFolder.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/iconify-pressed.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/iconify.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/info.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/maximize-pressed.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/maximize.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/menu.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/minimize-pressed.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/minimize.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/newFolder.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/paletteClose-pressed.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/paletteClose.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/question.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/upFolder.gif"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/ocean/warning.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/sortDown.png"
+    },
+    {
+      "module": "java.desktop",
+      "glob": "javax/swing/plaf/metal/icons/sortUp.png"
     },
     {
       "module": "java.desktop",
@@ -4244,6 +4498,25 @@
       "glob": "sun/awt/resources/cursors/invalid32x32.gif"
     },
     {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/Encodings.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities_en.properties"
+    },
+    {
+      "module": "java.xml",
+      "glob": "com/sun/org/apache/xml/internal/serializer/XMLEntities_en_US.properties"
+    },
+    {
+      "bundle": "com.sun.org.apache.xml.internal.serializer.XMLEntities"
+    },
+    {
       "bundle": "com.sun.swing.internal.plaf.basic.resources.basic"
     },
     {
@@ -4251,21 +4524,6 @@
     },
     {
       "bundle": "sun.awt.resources.awt"
-    },
-    {
-      "glob": "us/bringardner/swing/icons/V15x15.png"
-    },
-    {
-      "glob": "us/bringardner/swing/icons/tree_closed16x16.png"
-    },
-    {
-      "glob": "us/bringardner/swing/icons/tree_open16x16.png"
-    },
-    {
-      "glob": "us/bringardner/swing/icons/UpArrow20x20.png"
-    },
-    {
-      "glob": "us/bringardner/swing/icons/DnArrow20x20.png"
     }
   ]
 }
