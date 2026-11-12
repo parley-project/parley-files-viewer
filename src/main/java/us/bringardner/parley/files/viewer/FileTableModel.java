@@ -109,7 +109,7 @@ public class FileTableModel extends AbstractTableModel {
 	private boolean showHidden = true;
 	private boolean showExtention = true;
 
-	/** Folders in the theme's colors (swing-widgets' FolderIcon), as in the JavaFX viewer. */
+	/** Folders in the theme's colors (swing-widgets' FolderIcon). */
 	public static final Icon dirIcon = new us.bringardner.swing.gradient.FolderIcon(20, us.bringardner.swing.gradient.FolderIcon.Kind.CLOSED);
 	public static final Icon dirIconNoRead = new us.bringardner.swing.gradient.FolderIcon(20, us.bringardner.swing.gradient.FolderIcon.Kind.NOT_READABLE);
 	//public static final Icon fileIcon = new ImageIcon(FileTableModel.class.getResource(FileSourceViewer.ICON_LOCATION+"/fileicon_8mm_10mm.png"));
