@@ -32,7 +32,7 @@ import us.bringardner.fsh.ConsoleSignal;
  * The terminal's text: shows what the shell writes (its errors in red) and sends what's typed to
  * the shell's line reader or, while a command runs, to its standard input. The workings are fsh's
  * {@link ConsoleIO}; this is its JavaFX view, as fsh's ConsolePanel is its Swing view (and the same
- * as fsh-ide's JavaFX console).
+ * as Fsh Studio's JavaFX console had).
  */
 class TerminalView extends StackPane implements ConsoleIO.View {
 

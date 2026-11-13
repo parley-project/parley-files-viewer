@@ -263,7 +263,7 @@
 		<dependency>
 			<groupId>org.openjfx</groupId>
 			<artifactId>javafx-controls</artifactId>
-			<!-- 17 LTS, as fsh-ide and fx-widgets use -->
+			<!-- 17 LTS, as fx-widgets uses -->
 			<version>17.0.20</version>
 		</dependency>
 		<dependency>
@@ -272,7 +272,7 @@
 			<!-- 1.1.0: its dialogs follow the gradient look -->
 			<version>${project.version}</version>
 		</dependency>
-		<!-- The JavaFX viewer's terminal: the console text (as fsh-ide's JavaFX console) -->
+		<!-- The JavaFX viewer's terminal: the console text (as Fsh Studio's JavaFX console had) -->
 		<dependency>
 			<groupId>org.fxmisc.richtext</groupId>
 			<artifactId>richtextfx</artifactId>
