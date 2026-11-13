@@ -160,7 +160,7 @@ import us.bringardner.swing.dialog.SettingsDialog;
 public class FileSourceViewer extends FileSourceViewerBase implements ClipboardOwner {
 
 	/**
-	 * Where both viewers (Swing and JavaFX) keep their preferences, so they share them: the start
+	 * Where the viewer keeps its preferences: the start
 	 * folder, hidden files and extensions shown for each kind of file system, the recent files,
 	 * and the appearance.
 	 * @since 2.0.0
@@ -523,7 +523,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 								// never changes the state of a factory it didn't create, To-Do 18.6/18.7)
 								startFolder = homeDir;
 								findInTree(homeDir, tree::setSelectionPath);
-								// Recent Files, as in the JavaFX viewer: the folder a window starts in
+								// Recent Files: the folder a window starts in
 								if( recentFiles != null ) {
 									recentFiles.addRecent(homeDir);
 								}
@@ -2350,7 +2350,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 		tree.setCellRenderer(new DefaultTreeCellRenderer() {
 			private static final long serialVersionUID = 1L;
-			// folders in the theme's colors, as in the JavaFX viewer
+			// folders in the theme's colors
 			private Icon closedIcon = FileTableModel.dirIcon;
 			private Icon notReadableIcon = FileTableModel.dirIconNoRead;
 			private Icon openIcon = new us.bringardner.swing.gradient.FolderIcon(20, us.bringardner.swing.gradient.FolderIcon.Kind.OPEN);
@@ -2899,7 +2899,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 				.settings(()->actionAppearance(getFrame())).quit(FileSourceViewer::okToQuit);
 
 		menus.file.add(menuItem(getMntmLocalBrowser(), "New Window", StandardMenus.keys(KeyEvent.VK_N, 0)));
-		// (no shortcut: Shift-Shortcut-N is New Folder, as in Finder and the JavaFX viewer)
+		// (no shortcut: Shift-Shortcut-N is New Folder, as in Finder)
 		menus.file.add(menuItem(getMntmRemoteBrowser(), "New Remote Session...", null));
 		menus.file.add(menuItem(getMntmTerminal(), "New Terminal", StandardMenus.keys(KeyEvent.VK_T, StandardMenus.ALT)));
 		menus.file.add(StandardMenus.item("New Folder...", StandardMenus.keys(KeyEvent.VK_N, StandardMenus.SHIFT),
@@ -2928,7 +2928,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		menus.file.addSeparator();
 		menus.file.add(menuItem(getMntmClose(), "Close", StandardMenus.keys(KeyEvent.VK_W, 0)));
 
-		// Edit, as in the JavaFX viewer: on the files selected in the list (or the tree, if it has the
+		// Edit: on the files selected in the list (or the tree, if it has the
 		// focus); Paste into the folder selected, or the one shown
 		// (in a text field, Copy, Paste and Delete are the field's: on macOS the menu bar sees the keys first)
 		menus.edit.add(StandardMenus.item("Copy", StandardMenus.keys(KeyEvent.VK_C, 0), ()->{

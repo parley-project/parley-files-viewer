@@ -19,9 +19,8 @@ import java.io.File;
 import java.io.IOException;
 
 /**
- * Print, the same in both viewers: java.awt.Desktop's print on macOS and Windows; the lp command on
- * Linux, where Desktop doesn't print (and where starting AWT beside JavaFX would leave JavaFX unable
- * to show windows).
+ * Print: java.awt.Desktop's print on macOS and Windows; the lp command on Linux, where Desktop
+ * doesn't print.
  */
 public final class Printing {
 

@@ -154,14 +154,9 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<!-- A JVM per test class: on macOS, JavaFX can't start in a JVM where Swing (AWT)
-					     is already running, so the JavaFX viewer's tests can't share one with the
-					     Swing viewer's -->
+					<!-- A JVM per test class (first needed by the JavaFX viewer's tests; kept, so the
+					     Swing tests go on running apart from each other) -->
 					<reuseForks>false</reuseForks>
-					<!-- JavaFX unpacks its native libraries under user.home; keep them in target -->
-					<systemPropertyVariables>
-						<javafx.cachedir>${project.build.directory}/javafx-cache</javafx.cachedir>
-					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 			<!-- META-INF/parley/launcher.list in the jar: how parley-launcher runs it, and every jar it
@@ -179,8 +174,6 @@
 				</executions>
 				<configuration>
 					<mainClass>us.bringardner.parley.files.viewer.FileSourceViewer</mainClass>
-					<!-- (the JavaFX viewer is in the same jar: parley-launcher add parley-files-viewer-fx
-					     COORDINATES us.bringardner.parley.files.viewer.fx.Launcher) -->
 					<options>
 						<option>17+:--enable-native-access=ALL-UNNAMED</option>
 						<option>macos:-Xdock:name={app}</option>
@@ -255,41 +248,6 @@
 		<dependency>
 			<groupId>us.bringardner</groupId>
 			<artifactId>fsh</artifactId>
-			<version>2.0.0-SNAPSHOT</version>
-		</dependency>
-
-		<!-- The JavaFX viewer (us.bringardner.parley.files.viewer.fx, started by Launcher): JavaFX,
-		     and parley-files-fx's folder tree, file table, path bar and connection dialog -->
-		<dependency>
-			<groupId>org.openjfx</groupId>
-			<artifactId>javafx-controls</artifactId>
-			<!-- 17 LTS, as fx-widgets uses -->
-			<version>17.0.20</version>
-		</dependency>
-		<dependency>
-			<groupId>us.bringardner.parley</groupId>
-			<artifactId>parley-files-fx</artifactId>
-			<!-- 2.0.0: its dialogs follow the gradient look -->
-			<version>${project.version}</version>
-		</dependency>
-		<!-- The JavaFX viewer's terminal: the console text (as Fsh Studio's JavaFX console had) -->
-		<dependency>
-			<groupId>org.fxmisc.richtext</groupId>
-			<artifactId>richtextfx</artifactId>
-			<version>0.11.0</version>
-			<!-- It declares JavaFX 11, whose empty unclassified jars would take the place of the 17
-			     ones above: JavaFX comes from javafx-controls, all one version -->
-			<exclusions>
-				<exclusion>
-					<groupId>org.openjfx</groupId>
-					<artifactId>*</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<!-- The JavaFX viewer's look, menus and Settings, the twins of swing-widgets' -->
-		<dependency>
-			<groupId>us.bringardner</groupId>
-			<artifactId>bringardner-fx-widgets</artifactId>
 			<version>2.0.0-SNAPSHOT</version>
 		</dependency>
 
