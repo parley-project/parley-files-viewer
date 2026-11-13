@@ -11,7 +11,7 @@ Parley library: it uses the library the same way your own application would, so 
 [parley-bom](https://github.com/parley-project/parley-bom). Its window and Dock icons (the Parley tower with a folder badge) come from
 [parley-brand](https://github.com/parley-project/parley-brand). Other examples are
 [fsh](https://github.com/parley-project/parley-fsh), a shell for any parley-files file system, and
-[fsh-ide](https://github.com/parley-project/parley-fsh-ide), an IDE for fsh scripts.
+[Fsh Studio](https://github.com/parley-project/parley-fsh-studio), an IDE for fsh scripts.
 
 Formerly `com.bringardner:bjl_file_system_viewer` (BjlFileSystemViewer), with packages under
 `us.bringardner.io.filesource.viewer`; they are now `us.bringardner.parley.files.viewer`.
