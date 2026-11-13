@@ -3,8 +3,7 @@
 An application for browsing, copying, searching and editing files on any
 [parley-files](https://github.com/parley-project/parley-files) file system: local, memory, FTP,
 SFTP and JDBC. There are two: the Swing viewer (`FileSourceViewer`) and the JavaFX viewer
-(`us.bringardner.parley.files.viewer.fx.Launcher`), in one project, as fsh-ide keeps its Swing and
-JavaFX IDEs.
+(`us.bringardner.parley.files.viewer.fx.Launcher`), in one project.
 
 **An example of what Parley can help you build.** The viewer is an application, not part of the
 Parley library: it uses the library the same way your own application would, so it is not in

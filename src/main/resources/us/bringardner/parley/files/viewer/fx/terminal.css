@@ -1,4 +1,4 @@
-/* The terminal: fsh-ide's console styles, light, or dark with a dark theme */
+/* The terminal: the console styles of Fsh Studio's JavaFX IDE, light, or dark with a dark theme */
 /* (the font family is set in code: JavaFX CSS takes one family, not a list) */
 .console {
 	-fx-font-weight: normal;
