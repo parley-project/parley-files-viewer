@@ -34,12 +34,11 @@ import us.bringardner.parley.files.viewer.FileSourceViewer;
 import us.bringardner.swing.menu.StandardMenus;
 
 /**
- * The Swing viewer's File, Edit and View menus: the same as the JavaFX viewer's (ViewerLookTest
- * checks those against the same list).
+ * The viewer's File, Edit and View menus.
  */
 public class TestViewerMenus {
 
-	/** File, Edit and View of both viewers ("-" a separator; Print only where the system prints). */
+	/** File, Edit and View ("-" a separator; Print only where the system prints). */
 	public static final List<String> FILE = List.of("New Window", "New Remote Session...", "New Terminal", "New Folder...",
 			"-", "Open", "Open With...", "Edit", "Edit With...", "Print", "Recent Files", "-", "Start Here Next Time",
 			"Set Start Directory...", "-", "Close");
@@ -56,7 +55,7 @@ public class TestViewerMenus {
 	}
 
 	@Test
-	public void theSameMenusAsTheJavaFxViewer() throws Exception {
+	public void theFileEditAndViewMenus() throws Exception {
 		assumeFalse(GraphicsEnvironment.isHeadless(), "needs a display");
 		FileSourceViewer viewer = new FileSourceViewer();
 		try {
