@@ -19,7 +19,7 @@ import java.io.IOException;
 
 import us.bringardner.parley.files.FileSource;
 
-/** Renaming a file or folder in its own folder: the same in both viewers. */
+/** Renaming a file or folder in its own folder. */
 public final class FileRename {
 
 	private FileRename() {
