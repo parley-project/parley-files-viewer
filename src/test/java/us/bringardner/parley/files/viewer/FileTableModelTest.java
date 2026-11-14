@@ -88,8 +88,9 @@ public class FileTableModelTest {
 	@Test
 	public void toolTipIsTheCanonicalPath() throws Exception {
 		FileTableModel m = model(false);
-		assertEquals(dir.resolve("b.txt").toRealPath().toString(), m.getToolTip(0));
-		assertEquals(dir.resolve("sub").toRealPath().toString(), m.getToolTip(1), "a link shows its target");
+		// (a canonical path of a file source has / in it on Windows too)
+		assertEquals(dir.resolve("b.txt").toRealPath().toString().replace('\\', '/'), m.getToolTip(0));
+		assertEquals(dir.resolve("sub").toRealPath().toString().replace('\\', '/'), m.getToolTip(1), "a link shows its target");
 		assertNull(m.getToolTip(-1));
 		assertNull(m.getToolTip(3));
 		assertTrue(m.getToolTip(0) == m.getToolTip(0), "worked out once");
