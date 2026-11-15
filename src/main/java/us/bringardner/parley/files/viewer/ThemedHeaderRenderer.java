@@ -22,6 +22,7 @@
 package us.bringardner.parley.files.viewer;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.util.List;
 
@@ -45,9 +46,16 @@ import us.bringardner.swing.gradient.Theme;
  * gave white text on a nearly white header. This renderer paints the whole cell itself, as the
  * theme designer's preview does. The colors are read from {@link Theme#current()} on every paint,
  * so a change of theme shows at once.
+ * <p>
+ * Every header cell is as tall as the taller of the sort arrow and a line of the table's font, plus
+ * {@link #PADDING} above and below, whether or not its column is sorted, so the header keeps one
+ * height (the table header takes the tallest cell's preferred height).
  */
 class ThemedHeaderRenderer extends DefaultTableCellRenderer {
 	private static final long serialVersionUID = 1L;
+
+	/** Space above and below the header's text, in pixels. */
+	static final int PADDING = 6;
 
 	ThemedHeaderRenderer() {
 		setOpaque(true);
@@ -63,13 +71,35 @@ class ThemedHeaderRenderer extends DefaultTableCellRenderer {
 		setForeground(theme.getHeaderText());
 		setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createMatteBorder(0, 0, 1, 1, theme.getAccent()),
-				BorderFactory.createEmptyBorder(2, 4, 2, 4)));
-		Font font = table.getTableHeader() != null ? table.getTableHeader().getFont() : table.getFont();
+				BorderFactory.createEmptyBorder(PADDING, 4, PADDING, 4)));
+		// the table's font, so the header follows the font chosen in Settings as the rows do
+		Font font = table.getFont();
 		if( font != null ) {
 			setFont(font.deriveFont(Font.BOLD));
 		}
 		setIcon(sortIcon(table, column));
 		return this;
+	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		Dimension size = super.getPreferredSize();
+		int content = Math.max(getFontMetrics(getFont()).getHeight(), arrowHeight());
+		// the matte border's 1 pixel line along the bottom, then the padding above and below
+		size.height = Math.max(size.height, content + 2 * PADDING + 1);
+		return size;
+	}
+
+	/** The height of the taller sort arrow, so a column keeps its height when it is sorted. */
+	private static int arrowHeight() {
+		int h = 0;
+		for(String key : new String[] {"Table.ascendingSortIcon", "Table.descendingSortIcon"}) {
+			Icon icon = UIManager.getIcon(key);
+			if( icon != null ) {
+				h = Math.max(h, icon.getIconHeight());
+			}
+		}
+		return h;
 	}
 
 	/** The arrow for the column the table is sorted on, or null. */
