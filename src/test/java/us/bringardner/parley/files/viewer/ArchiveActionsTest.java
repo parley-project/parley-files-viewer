@@ -43,8 +43,13 @@ import us.bringardner.parley.files.FileSourceFactory;
 import us.bringardner.parley.files.archive.format.ArchiveFormats;
 import us.bringardner.parley.files.archive.tar.TarArchiveEntry;
 import us.bringardner.parley.files.archive.tar.TarWriter;
+import us.bringardner.parley.files.memory.MemoryFileSourceFactory;
 
-/** The right-click menu's Compress and Expand (ArchiveActions), on local files. */
+/**
+ * The right-click menu's Compress and Expand (ArchiveActions), on local files and on a file system
+ * that isn't local (memory, standing in for SFTP and the other remote ones: a program run by the
+ * system can't see it, so only fsh's own commands can do the work there).
+ */
 public class ArchiveActionsTest {
 
 	@TempDir
@@ -145,5 +150,63 @@ public class ArchiveActionsTest {
 		FileSource bad = fs(write("bad.zip", "not a zip at all"));
 		IOException e = assertThrows(IOException.class, ()->ArchiveActions.expand(bad));
 		assertFalse(e.getMessage().isEmpty());
+	}
+
+	/** a file of the memory file system, with text */
+	private static FileSource write(FileSource file, String text) throws IOException {
+		file.getParentFile().mkdirs();
+		try (OutputStream out = file.getOutputStream()) {
+			out.write(text.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+		}
+		return file;
+	}
+
+	private static String read(FileSource file) throws IOException {
+		try (java.io.InputStream in = file.getInputStream()) {
+			return new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+		}
+	}
+
+	@Test
+	public void onAFileSystemThatIsNotLocal() throws Exception {
+		MemoryFileSourceFactory memory = new MemoryFileSourceFactory();
+		memory.connect();
+		try {
+			FileSource home = memory.createFileSource("/home/tony");
+			home.mkdirs();
+			write(home.getChild("docs/a.txt"), "A");
+			write(home.getChild("docs/sub/b.txt"), "B");
+
+			// (over SFTP this failed with zip's status 12: the system's zip ran, and can't see the folder)
+			FileSource zip = ArchiveActions.compress(home, List.of(home.getChild("docs")));
+			assertEquals("docs.zip", zip.getName());
+			assertTrue(zip.exists());
+
+			FileSource out = ArchiveActions.expand(zip);
+			assertEquals("docs 2", out.getName());
+			assertEquals("A", read(out.getChild("docs/a.txt")));
+			assertEquals("B", read(out.getChild("docs/sub/b.txt")));
+
+			// a gzipped tar
+			FileSource tgz = home.getChild("photos.tgz");
+			try (OutputStream file = tgz.getOutputStream();
+					OutputStream gz = new java.util.zip.GZIPOutputStream(file);
+					TarWriter tar = new TarWriter(gz)) {
+				byte [] bytes = "pixels".getBytes();
+				try (OutputStream e = tar.putEntry(TarArchiveEntry.builder("trip/day1.jpg").size(bytes.length).build())) {
+					e.write(bytes);
+				}
+			}
+			FileSource photos = ArchiveActions.expand(tgz);
+			assertEquals("photos", photos.getName());
+			assertEquals("pixels", read(photos.getChild("trip/day1.jpg")));
+
+			// a failure says what the command said
+			FileSource bad = write(home.getChild("bad.zip"), "not a zip at all");
+			IOException e = assertThrows(IOException.class, ()->ArchiveActions.expand(bad));
+			assertFalse(e.getMessage().startsWith("failed (status"), e.getMessage());
+		} finally {
+			memory.disConnect();
+		}
 	}
 }
