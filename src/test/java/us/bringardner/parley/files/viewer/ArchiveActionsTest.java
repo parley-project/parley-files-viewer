@@ -245,6 +245,7 @@ public class ArchiveActionsTest {
 	/** What a Compress or Expand reported. */
 	static class Recorded implements ArchiveActions.Progress {
 		Integer total;
+		long bytesDone = -1, bytesTotal = -1;
 		final List<String> names = new java.util.ArrayList<>();
 		final List<Integer> counts = new java.util.ArrayList<>();
 
@@ -257,6 +258,13 @@ public class ArchiveActionsTest {
 		public void item(int done, String name) {
 			counts.add(done);
 			names.add(name);
+		}
+
+		@Override
+		public void bytes(long done, long total) {
+			assertTrue(done >= bytesDone, "bytes read never go back");
+			bytesDone = done;
+			bytesTotal = total;
 		}
 
 		/** the counts went 1, 2, 3 ... */
@@ -301,10 +309,13 @@ public class ArchiveActionsTest {
 		}
 		Recorded expanded = new Recorded();
 		ArchiveActions.expand(fs(tgz), expanded);
-		// a tar has no index: no total, only the items
+		// a tar has no index: no total, but how much of it has been read, of its size
 		assertEquals(null, expanded.total);
+		assertEquals(Files.size(tgz), expanded.bytesTotal);
+		assertTrue(expanded.bytesDone > 0 && expanded.bytesDone <= expanded.bytesTotal, expanded.bytesDone+" of "+expanded.bytesTotal);
 		assertEquals(List.of("trip/day1.jpg", "trip/day2.jpg"), expanded.names);
 		expanded.assertCounted();
+		assertEquals("trip/day1.jpg", read(fs(dir.resolve("trip/day1.jpg"))));
 	}
 
 	@Test
@@ -327,6 +338,16 @@ public class ArchiveActionsTest {
 		} finally {
 			memory.disConnect();
 		}
+	}
+
+	@Test
+	public void whatTheProgressWindowSays() {
+		assertEquals("Getting ready\u2026", ArchiveProgressWindow.text(-1, 0, "", -1));
+		assertEquals("0 of 401 (0%)", ArchiveProgressWindow.text(401, 0, "", 0));
+		assertEquals("152 of 401 (37%): docs/f234.bin", ArchiveProgressWindow.text(401, 152, "docs/f234.bin", 37));
+		assertEquals("12%", ArchiveProgressWindow.text(-1, 0, "", 12));
+		assertEquals("1 item (3%): trip/a.jpg", ArchiveProgressWindow.text(-1, 1, "trip/a.jpg", 3));
+		assertEquals("37 items (45%): trip/b.jpg", ArchiveProgressWindow.text(-1, 37, "trip/b.jpg", 45));
 	}
 
 	@Test
