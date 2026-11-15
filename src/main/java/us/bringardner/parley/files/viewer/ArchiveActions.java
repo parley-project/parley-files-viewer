@@ -44,12 +44,20 @@ import us.bringardner.parley.files.archive.format.ArchiveFormats;
  * the files are in, so the viewer makes and opens archives exactly as the shell does, on any file
  * system (local or remote).
  * <p>
+ * Those commands are fsh "utilities": where the system has a program of the same name (macOS,
+ * Linux), the program runs unless fsh's are turned on, and a program can't see a remote folder
+ * (it failed over SFTP with zip's "name not matched", status 12). So the console turns them on
+ * first ({@link #USE_FSH_COMMANDS}).
+ * <p>
  * As the Finder does: Compress puts {@code name.zip} (or {@code Archive.zip} for several items)
  * beside what was compressed; Expand puts an archive's files in a new folder beside it, named after
  * it without its extension ({@code photos.tar.gz} → {@code photos}). Neither replaces anything: a
  * name that is taken gets a number ({@code photos 2}).
  */
 class ArchiveActions {
+
+	/** Run first in the console: fsh's own zip, unzip, tar (and the rest), never the system's programs. */
+	static final String USE_FSH_COMMANDS = "shopt -s fshutils";
 
 	/** The name of the archive Compress makes from more than one item. */
 	static final String SEVERAL_ITEMS_NAME = "Archive";
@@ -154,7 +162,7 @@ class ArchiveActions {
 			console.setStdOut(outStream);
 			console.setStdErr(errStream);
 			console.startIn(folder);
-			int status = console.executeScript(script);
+			int status = console.executeScript(USE_FSH_COMMANDS+"\n"+script);
 			errStream.flush();
 			if( status != 0 ) {
 				String message = err.toString(StandardCharsets.UTF_8).trim();
