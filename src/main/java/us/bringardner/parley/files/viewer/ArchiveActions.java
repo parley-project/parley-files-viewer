@@ -50,9 +50,10 @@ import us.bringardner.parley.files.archive.format.ArchiveFormats;
  * first ({@link #USE_FSH_COMMANDS}).
  * <p>
  * As the Finder does: Compress puts {@code name.zip} (or {@code Archive.zip} for several items)
- * beside what was compressed; Expand puts an archive's files in a new folder beside it, named after
- * it without its extension ({@code photos.tar.gz} → {@code photos}). Neither replaces anything: a
- * name that is taken gets a number ({@code photos 2}).
+ * beside what was compressed. Expand puts what the archive holds beside it: when that is one folder
+ * or file ({@code docs.zip} holding {@code docs/}), that folder or file itself; otherwise a new
+ * folder named after the archive without its extension ({@code photos.tar.gz} → {@code photos})
+ * holding it all. Neither replaces anything: a name that is taken gets a number ({@code docs 2}).
  */
 class ArchiveActions {
 
@@ -95,10 +96,15 @@ class ArchiveActions {
 		return folder.getChild(zipName);
 	}
 
+	/** The start of the hidden folder an archive is expanded into first, beside it. */
+	static final String EXPANDING_PREFIX = ".expanding-";
+
 	/**
-	 * Expands the archive into a new folder beside it.
+	 * Expands the archive beside it. It is expanded into a hidden folder first; then, if it held
+	 * one folder or file, that is moved out beside the archive (so docs.zip holding docs/ gives
+	 * docs, not docs/docs); otherwise the hidden folder is given the archive's name.
 	 *
-	 * @return the folder made
+	 * @return the folder or file made
 	 * @throws IOException with the command's own message when it fails
 	 */
 	static FileSource expand(FileSource archive) throws IOException {
@@ -107,13 +113,49 @@ class ArchiveActions {
 			throw new IOException(archive.getName()+" is not an archive this can expand");
 		}
 		FileSource folder = archive.getParentFile();
-		String dir = unique(folder, folderName(archive.getName(), format), "");
+		String name = folderName(archive.getName(), format);
+		String tmp = unique(folder, EXPANDING_PREFIX+name, "");
 		String extract = "zip".equals(format.getName())
-				? "unzip -q -d "+quote(dir)+" "+quote(archive.getName())
+				? "unzip -q -d "+quote(tmp)+" "+quote(archive.getName())
 				// (tar recognizes a gzipped archive itself)
-				: "tar -xf "+quote(archive.getName())+" -C "+quote(dir);
-		run(folder, "mkdir "+quote(dir)+" && "+extract);
-		return folder.getChild(dir);
+				: "tar -xf "+quote(archive.getName())+" -C "+quote(tmp);
+		FileSource tmpDir = folder.getChild(tmp);
+		try {
+			run(folder, "mkdir "+quote(tmp)+" && "+extract);
+		} catch (IOException e) {
+			// what was expanded before it failed stays, where it can be seen
+			if( tmpDir.exists() ) {
+				moveTo(tmpDir, folder, unique(folder, name, ""));
+			}
+			throw e;
+		}
+		tmpDir.refresh();
+		FileSource[] kids = tmpDir.listFiles();
+		if( kids != null && kids.length == 1 ) {
+			FileSource only = kids[0];
+			String[] baseExt = only.isDirectory() ? new String[] {only.getName(), ""} : splitExtension(only.getName());
+			FileSource made = moveTo(only, folder, unique(folder, baseExt[0], baseExt[1]));
+			if( !tmpDir.delete() ) {
+				throw new IOException("Expanded "+archive.getName()+" but could not remove "+tmp);
+			}
+			return made;
+		}
+		return moveTo(tmpDir, folder, unique(folder, name, ""));
+	}
+
+	/** Renames file into folder as name. */
+	private static FileSource moveTo(FileSource file, FileSource folder, String name) throws IOException {
+		FileSource to = folder.getChild(name);
+		if( !file.renameTo(to) ) {
+			throw new IOException("Could not rename "+file.getName()+" to "+name);
+		}
+		return to;
+	}
+
+	/** "report.pdf" is {"report", ".pdf"}; "README" and ".profile" have no extension. */
+	static String[] splitExtension(String name) {
+		int dot = name.lastIndexOf('.');
+		return dot > 0 ? new String[] {name.substring(0, dot), name.substring(dot)} : new String[] {name, ""};
 	}
 
 	/** The archive's name without the extension its format knows it by: photos.tar.gz is photos. */
