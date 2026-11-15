@@ -1348,7 +1348,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 				? popupSelection : actionTarget;
 		final List<FileSource> files = new ArrayList<>(target.files);
 		String what = files.size() == 1 ? "\u201c"+files.get(0).getName()+"\u201d" : files.size()+" items";
-		runArchiveAction("Compressing "+what+"\u2026", "Could not compress", ()->{
+		runArchiveAction("Compressing "+what+"\u2026", "Could not compress", progress->{
 			FileSource folder = files.get(0).getParentFile();
 			for(FileSource f : files) {
 				FileSource p = f.getParentFile();
@@ -1356,7 +1356,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 					throw new IOException("To compress several items together, select them in one folder");
 				}
 			}
-			return ArchiveActions.compress(folder, files);
+			return ArchiveActions.compress(folder, files, progress);
 		});
 	}
 
@@ -1370,13 +1370,13 @@ Panel.font = javax.swing.plaf.FontUIResource
 				continue;   // (several selected in the tree: only the archives among them)
 			}
 			runArchiveAction("Expanding \u201c"+archive.getName()+"\u201d\u2026", "Could not expand "+archive.getName(),
-					()->ArchiveActions.expand(archive));
+					progress->ArchiveActions.expand(archive, progress));
 		}
 	}
 
 	/** Work that makes a file or folder (an archive, an archive's folder). */
 	private interface ArchiveWork {
-		FileSource run() throws IOException;
+		FileSource run(ArchiveActions.Progress progress) throws IOException;
 	}
 
 	/** How long archive work runs before its progress window shows, so quick work doesn't flash one. */
@@ -1385,21 +1385,21 @@ Panel.font = javax.swing.plaf.FontUIResource
 	/**
 	 * Does the work in the background (a big folder, or an archive on a remote file system, can take
 	 * a while), with the wait cursor and, once it has run {@link #ARCHIVE_PROGRESS_DELAY_MS}, a small
-	 * window saying what is being done; then refreshes the tree's folder and the table to show
+	 * window saying what is being done and how far it has got ({@link ArchiveProgressWindow}); then refreshes the tree's folder and the table to show
 	 * what it made, or shows the error.
 	 */
 	private void runArchiveAction(final String message, final String errorTitle, final ArchiveWork work) {
 		final Component pane = getFrame().getGlassPane();
 		pane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		pane.setVisible(true);
-		final javax.swing.JDialog progress = archiveProgressWindow(message);
+		final ArchiveProgressWindow progress = new ArchiveProgressWindow(getFrame(), message);
 		final javax.swing.Timer showProgress = new javax.swing.Timer(ARCHIVE_PROGRESS_DELAY_MS, e->progress.setVisible(true));
 		showProgress.setRepeats(false);
 		showProgress.start();
 		new SwingWorker<FileSource, Object>() {
 			@Override
 			protected FileSource doInBackground() throws Exception {
-				return work.run();
+				return work.run(progress);
 			}
 
 			@Override
@@ -1420,25 +1420,6 @@ Panel.font = javax.swing.plaf.FontUIResource
 				}
 			}
 		}.execute();
-	}
-
-	/** A small window, not modal, with the message and a busy bar: the viewer stays usable meanwhile. */
-	private javax.swing.JDialog archiveProgressWindow(String message) {
-		javax.swing.JDialog d = new javax.swing.JDialog(getFrame(), "Archive", false);
-		JPanel content = new JPanel(new java.awt.BorderLayout(0, 8));
-		content.setBorder(javax.swing.BorderFactory.createEmptyBorder(12, 16, 14, 16));
-		content.add(new javax.swing.JLabel(message), java.awt.BorderLayout.NORTH);
-		javax.swing.JProgressBar bar = new javax.swing.JProgressBar();
-		bar.setIndeterminate(true);
-		content.add(bar, java.awt.BorderLayout.CENTER);
-		d.setContentPane(content);
-		d.setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
-		// on the theme's gradient, as the viewer's other windows
-		GradientLook.apply(d);
-		d.pack();
-		d.setMinimumSize(new java.awt.Dimension(300, d.getHeight()));
-		d.setLocationRelativeTo(getFrame());
-		return d;
 	}
 
 	public void renameActionSet() {

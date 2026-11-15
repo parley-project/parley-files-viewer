@@ -29,14 +29,19 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BooleanSupplier;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import us.bringardner.fsh.Console;
 import us.bringardner.fsh.syntax.Parser;
 import us.bringardner.parley.files.FileSource;
+import us.bringardner.parley.files.archive.FileSourceSources;
 import us.bringardner.parley.files.archive.format.ArchiveFormat;
 import us.bringardner.parley.files.archive.format.ArchiveFormats;
+import us.bringardner.parley.files.archive.format.ArchiveReader;
+import us.bringardner.parley.files.archive.format.SeekableSource;
 
 /**
  * The right-click menu's Compress and Expand. The work is done by fsh's own archive commands
@@ -59,6 +64,29 @@ class ArchiveActions {
 
 	/** Run first in the console: fsh's own zip, unzip, tar (and the rest), never the system's programs. */
 	static final String USE_FSH_COMMANDS = "shopt -s fshutils";
+
+	/**
+	 * What Compress and Expand report as they go, for the progress window. Called on the thread
+	 * doing the work.
+	 */
+	interface Progress {
+		/** How many items there are, when that is known first (Compress counts them; a zip's index lists them). */
+		default void total(int count) {
+		}
+
+		/** One more item (file or folder) done: how many are done so far, and its name. */
+		default void item(int done, String name) {
+		}
+
+		/** Reports nothing. */
+		Progress NONE = new Progress() {
+		};
+	}
+
+	/** zip's line for each item it adds: "  adding: docs/a.txt (deflated 40%)" */
+	static final String ZIP_ADDING = "  adding: ";
+	/** unzip's lines for each item it extracts: "   creating: docs/" and "  inflating: docs/a.txt" */
+	static final String UNZIP_CREATING = "   creating: ", UNZIP_INFLATING = "  inflating: ";
 
 	/** The name of the archive Compress makes from more than one item. */
 	static final String SEVERAL_ITEMS_NAME = "Archive";
@@ -86,14 +114,52 @@ class ArchiveActions {
 	 * @throws IOException with zip's own message when it fails
 	 */
 	static FileSource compress(FileSource folder, List<FileSource> files) throws IOException {
+		return compress(folder, files, Progress.NONE);
+	}
+
+	/**
+	 * As {@link #compress(FileSource, List)}, reporting to progress: the files and folders are
+	 * counted first (over a remote file system that is a listing of each folder), then each is
+	 * reported as zip adds it.
+	 */
+	static FileSource compress(FileSource folder, List<FileSource> files, Progress progress) throws IOException {
 		String base = files.size() == 1 ? files.get(0).getName() : SEVERAL_ITEMS_NAME;
 		String zipName = unique(folder, base, ".zip");
-		StringBuilder script = new StringBuilder("zip -rq ").append(quote(zipName));
+		if( progress != Progress.NONE ) {
+			int count = 0;
+			for(FileSource f : files) {
+				count += countItems(f);
+			}
+			progress.total(count);
+		}
+		// (not -q: zip writes a line for each item it adds, which is the progress)
+		StringBuilder script = new StringBuilder("zip -r ").append(quote(zipName));
 		for(FileSource f : files) {
 			script.append(' ').append(quote(f.getName()));
 		}
-		run(folder, script.toString());
+		AtomicInteger done = new AtomicInteger();
+		run(folder, script.toString(), line->{
+			if( line.startsWith(ZIP_ADDING) ) {
+				String name = line.substring(ZIP_ADDING.length());
+				int how = name.lastIndexOf(" (");
+				progress.item(done.incrementAndGet(), how > 0 ? name.substring(0, how) : name);
+			}
+		});
 		return folder.getChild(zipName);
+	}
+
+	/** The items zip -r makes of f: f, and everything in it when it is a folder (as zip, following a link to one). */
+	static int countItems(FileSource f) throws IOException {
+		int count = 1;
+		if( f.isDirectory() ) {
+			FileSource[] kids = f.listFiles();
+			if( kids != null ) {
+				for(FileSource k : kids) {
+					count += countItems(k);
+				}
+			}
+		}
+		return count;
 	}
 
 	/** The start of the hidden folder an archive is expanded into first, beside it. */
@@ -108,6 +174,14 @@ class ArchiveActions {
 	 * @throws IOException with the command's own message when it fails
 	 */
 	static FileSource expand(FileSource archive) throws IOException {
+		return expand(archive, Progress.NONE);
+	}
+
+	/**
+	 * As {@link #expand(FileSource)}, reporting to progress each item as it is extracted; for a
+	 * zip the total comes first, from its index. A tar has no index, so only the items are reported.
+	 */
+	static FileSource expand(FileSource archive, Progress progress) throws IOException {
 		ArchiveFormat format = formatOf(archive);
 		if( format == null ) {
 			throw new IOException(archive.getName()+" is not an archive this can expand");
@@ -115,13 +189,37 @@ class ArchiveActions {
 		FileSource folder = archive.getParentFile();
 		String name = folderName(archive.getName(), format);
 		String tmp = unique(folder, EXPANDING_PREFIX+name, "");
-		String extract = "zip".equals(format.getName())
-				? "unzip -q -d "+quote(tmp)+" "+quote(archive.getName())
+		boolean zip = "zip".equals(format.getName());
+		if( zip && progress != Progress.NONE ) {
+			// the index is read from the end: a few reads, however big the archive
+			try (SeekableSource src = FileSourceSources.open(archive); ArchiveReader reader = format.openReader(src)) {
+				progress.total(reader.getEntries().size());
+			}
+		}
+		// (not quiet: unzip, and tar with -v, write a line for each item, which is the progress)
+		String extract = zip
+				? "unzip -d "+quote(tmp)+" "+quote(archive.getName())
 				// (tar recognizes a gzipped archive itself)
-				: "tar -xf "+quote(archive.getName())+" -C "+quote(tmp);
+				: "tar -xvf "+quote(archive.getName())+" -C "+quote(tmp);
+		AtomicInteger done = new AtomicInteger();
+		Consumer<String> lines = line->{
+			String item = null;
+			if( !zip ) {
+				item = line;   // tar -v: the member's name
+			} else if( line.startsWith(UNZIP_INFLATING) ) {
+				item = line.substring(UNZIP_INFLATING.length());
+			} else if( line.startsWith(UNZIP_CREATING) ) {
+				item = line.substring(UNZIP_CREATING.length());
+			}
+			if( item != null && !item.isEmpty() ) {
+				// (unzip names it with the hidden folder in front)
+				String prefix = "./"+tmp+"/";
+				progress.item(done.incrementAndGet(), item.startsWith(prefix) ? item.substring(prefix.length()) : item);
+			}
+		};
 		FileSource tmpDir = folder.getChild(tmp);
 		try {
-			run(folder, "mkdir "+quote(tmp)+" && "+extract);
+			run(folder, "mkdir "+quote(tmp)+" && "+extract, lines);
 		} catch (IOException e) {
 			// what was expanded before it failed stays, where it can be seen
 			if( tmpDir.exists() ) {
@@ -191,6 +289,14 @@ class ArchiveActions {
 	 * @throws IOException with what the commands wrote to standard error when the script fails
 	 */
 	static void run(FileSource folder, String script) throws IOException {
+		run(folder, script, line->{});
+	}
+
+	/**
+	 * As {@link #run(FileSource, String)}, giving each line the commands write to standard output
+	 * to lines, as it is written.
+	 */
+	static void run(FileSource folder, String script, Consumer<String> lines) throws IOException {
 		// exit in a script must end the script, not the viewer
 		Console.exitJvm = false;
 		// a new console takes the parser's aliases and posix mode: given back after, for any open terminal
@@ -198,7 +304,7 @@ class ArchiveActions {
 		BooleanSupplier posix = Parser.posixMode;
 		ByteArrayOutputStream err = new ByteArrayOutputStream();
 		try (PrintStream errStream = new PrintStream(err, true, StandardCharsets.UTF_8);
-				PrintStream outStream = new PrintStream(OutputStream.nullOutputStream())) {
+				PrintStream outStream = new PrintStream(new LineOutputStream(lines), true, StandardCharsets.UTF_8)) {
 			Console console = new Console();
 			console.setStdIn(InputStream.nullInputStream());
 			console.setStdOut(outStream);
@@ -213,6 +319,34 @@ class ArchiveActions {
 		} finally {
 			Parser.aliases = aliases;
 			Parser.posixMode = posix;
+		}
+	}
+
+	/** Gives each line written to it (UTF-8, without its end) to a consumer. */
+	static class LineOutputStream extends OutputStream {
+		private final Consumer<String> lines;
+		private final ByteArrayOutputStream line = new ByteArrayOutputStream();
+
+		LineOutputStream(Consumer<String> lines) {
+			this.lines = lines;
+		}
+
+		@Override
+		public void write(int b) {
+			if( b == '\n' ) {
+				String text = line.toString(StandardCharsets.UTF_8);
+				line.reset();
+				lines.accept(text.endsWith("\r") ? text.substring(0, text.length()-1) : text);
+			} else {
+				line.write(b);
+			}
+		}
+
+		@Override
+		public void close() {
+			if( line.size() > 0 ) {
+				write('\n');
+			}
 		}
 	}
 }
