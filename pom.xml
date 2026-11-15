@@ -235,6 +235,17 @@
 		</dependency>
 		<dependency>
 			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-files-archive</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
+			<artifactId>parley-files-webdav</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>us.bringardner.parley</groupId>
 			<artifactId>parley-files-jdbc</artifactId>
 			<version>${project.version}</version>
 		</dependency>
