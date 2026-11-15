@@ -1,0 +1,149 @@
+/**
+ * <PRE>
+ * 
+ * Copyright Tony Bringarder 1998, 2026 <A href="http://bringardner.com/tony">Tony Bringardner</A>
+ * 
+ *
+ *   Licensed under the Apache License, Version 2.0 (the "License");
+ *   you may not use this file except in compliance with the License.
+ *   You may obtain a copy of the License at
+ *
+ *       <A href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</A>
+ *
+ *   Unless required by applicable law or agreed to in writing, software
+ *   distributed under the License is distributed on an "AS IS" BASIS,
+ *   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *   See the License for the specific language governing permissions and
+ *   limitations under the License.
+ *  </PRE>
+ *   
+ *	@author Tony Bringardner   
+ */
+package us.bringardner.parley.files.viewer;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import us.bringardner.parley.files.FileSource;
+import us.bringardner.parley.files.FileSourceFactory;
+import us.bringardner.parley.files.archive.format.ArchiveFormats;
+import us.bringardner.parley.files.archive.tar.TarArchiveEntry;
+import us.bringardner.parley.files.archive.tar.TarWriter;
+
+/** The right-click menu's Compress and Expand (ArchiveActions), on local files. */
+public class ArchiveActionsTest {
+
+	@TempDir
+	Path dir;
+
+	private FileSource fs(Path p) throws IOException {
+		return FileSourceFactory.getDefaultFactory().createFileSource(p.toString());
+	}
+
+	private Path write(String rel, String text) throws IOException {
+		Path p = dir.resolve(rel);
+		Files.createDirectories(p.getParent());
+		Files.writeString(p, text);
+		return p;
+	}
+
+	/** every file under top, as path=text */
+	private Set<String> contents(Path top) throws IOException {
+		Set<String> ret = new TreeSet<>();
+		try (Stream<Path> s = Files.walk(top)) {
+			for(Path p : (Iterable<Path>) s::iterator) {
+				if( Files.isRegularFile(p)) {
+					ret.add(top.relativize(p).toString().replace('\\', '/')+"="+Files.readString(p));
+				}
+			}
+		}
+		return ret;
+	}
+
+	@Test
+	public void compressAFolderThenExpandIt() throws Exception {
+		write("src/a.txt", "A");
+		write("src/sub/it's here.txt", "B");
+		FileSource zip = ArchiveActions.compress(fs(dir), List.of(fs(dir.resolve("src"))));
+		assertEquals("src.zip", zip.getName());
+		assertTrue(Files.isRegularFile(dir.resolve("src.zip")));
+		assertTrue(ArchiveActions.isArchive(zip));
+
+		FileSource out = ArchiveActions.expand(zip);
+		// a folder named src is there already: the new one is numbered
+		assertEquals("src 2", out.getName());
+		assertEquals(Set.of("src/a.txt=A", "src/sub/it's here.txt=B"), contents(dir.resolve("src 2")));
+	}
+
+	@Test
+	public void severalItemsGoInArchiveZip() throws Exception {
+		write("one.txt", "1");
+		write("-two.txt", "2");
+		FileSource zip = ArchiveActions.compress(fs(dir), List.of(fs(dir.resolve("one.txt")), fs(dir.resolve("-two.txt"))));
+		assertEquals("Archive.zip", zip.getName());
+		// and again: nothing is replaced
+		FileSource zip2 = ArchiveActions.compress(fs(dir), List.of(fs(dir.resolve("one.txt"))));
+		assertEquals("one.txt.zip", zip2.getName());
+		FileSource zip3 = ArchiveActions.compress(fs(dir), List.of(fs(dir.resolve("one.txt")), fs(dir.resolve("-two.txt"))));
+		assertEquals("Archive 2.zip", zip3.getName());
+
+		FileSource out = ArchiveActions.expand(zip);
+		assertEquals("Archive", out.getName());
+		assertEquals(Set.of("one.txt=1", "-two.txt=2"), contents(dir.resolve("Archive")));
+	}
+
+	@Test
+	public void expandAGzippedTar() throws Exception {
+		Path tgz = dir.resolve("photos.tar.gz");
+		try (OutputStream file = Files.newOutputStream(tgz);
+				OutputStream gz = new java.util.zip.GZIPOutputStream(file);
+				TarWriter tar = new TarWriter(gz)) {
+			byte [] bytes = "pixels".getBytes();
+			try (OutputStream e = tar.putEntry(TarArchiveEntry.builder("trip/day1.jpg").size(bytes.length).build())) {
+				e.write(bytes);
+			}
+		}
+		FileSource f = fs(tgz);
+		assertTrue(ArchiveActions.isArchive(f));
+		FileSource out = ArchiveActions.expand(f);
+		assertEquals("photos", out.getName());
+		assertEquals(Set.of("trip/day1.jpg=pixels"), contents(dir.resolve("photos")));
+	}
+
+	@Test
+	public void folderNames() {
+		assertEquals("photos", ArchiveActions.folderName("photos.tar.gz", ArchiveFormats.forFileName("x.tar.gz")));
+		assertEquals("photos", ArchiveActions.folderName("photos.TGZ", ArchiveFormats.forFileName("x.tgz")));
+		assertEquals("app", ArchiveActions.folderName("app.jar", ArchiveFormats.forFileName("x.jar")));
+		assertEquals(".zip contents", ArchiveActions.folderName(".zip", ArchiveFormats.forFileName("x.zip")));
+	}
+
+	@Test
+	public void notAnArchive() throws Exception {
+		FileSource txt = fs(write("notes.txt", "n"));
+		assertFalse(ArchiveActions.isArchive(txt));
+		assertFalse(ArchiveActions.isArchive(fs(dir)));
+		assertThrows(IOException.class, ()->ArchiveActions.expand(txt));
+	}
+
+	@Test
+	public void aDamagedArchiveSaysWhy() throws Exception {
+		FileSource bad = fs(write("bad.zip", "not a zip at all"));
+		IOException e = assertThrows(IOException.class, ()->ArchiveActions.expand(bad));
+		assertFalse(e.getMessage().isEmpty());
+	}
+}

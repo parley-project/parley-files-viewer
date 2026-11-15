@@ -988,6 +988,15 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	private JMenuItem itemOpen;
 	private JMenuItem itemOpenWith;
 	private JMenuItem itemRename;
+	/** Zips what was right-clicked into a new zip beside it (shown when it isn't an archive) */
+	private JMenuItem itemCompress;
+	/** Expands the archive right-clicked into a new folder beside it (shown when it is one) */
+	private JMenuItem itemExpand;
+	/**
+	 * The rows selected when the table's menu was opened. With several rows the menu is the
+	 * folder's (actionTarget is the folder), but Compress zips the rows.
+	 */
+	private ActionContext popupSelection;
 	private JMenuItem itemRefresh;
 	private JMenuItem itemOpenTerminal;
 	private JMenuItem itemNewFolder;
@@ -1308,6 +1317,82 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 
 		}
+	}
+
+	/** Compress: zips the items right-clicked into a new zip in the folder they are in. */
+	public void compressActionSet() {
+		if( actionTarget == null || actionTarget.files.isEmpty()) {
+			return;
+		}
+		// several rows selected in the table: those, not the folder they are in
+		ActionContext target = popupSelection != null && popupSelection.files.size() > 1
+				&& actionTarget.files.size() == 1 && popupSelection.source == actionTarget.source
+				? popupSelection : actionTarget;
+		final List<FileSource> files = new ArrayList<>(target.files);
+		runArchiveAction("Could not compress", ()->{
+			FileSource folder = files.get(0).getParentFile();
+			for(FileSource f : files) {
+				FileSource p = f.getParentFile();
+				if( p == null || !p.getAbsolutePath().equals(folder.getAbsolutePath())) {
+					throw new IOException("To compress several items together, select them in one folder");
+				}
+			}
+			return ArchiveActions.compress(folder, files);
+		});
+	}
+
+	/** Expand: each archive right-clicked is expanded into a new folder beside it. */
+	public void expandActionSet() {
+		if( actionTarget == null || actionTarget.files.isEmpty()) {
+			return;
+		}
+		for(final FileSource archive : new ArrayList<>(actionTarget.files)) {
+			if( us.bringardner.parley.files.archive.format.ArchiveFormats.forFileName(archive.getName()) == null ) {
+				continue;   // (several selected in the tree: only the archives among them)
+			}
+			runArchiveAction("Could not expand "+archive.getName(), ()->ArchiveActions.expand(archive));
+		}
+	}
+
+	/** Work that makes a file or folder (an archive, an archive's folder). */
+	private interface ArchiveWork {
+		FileSource run() throws IOException;
+	}
+
+	/**
+	 * Does the work in the background (an archive on a remote file system can take a while), with
+	 * the wait cursor; then shows what it made, in the tree and the table, or the error.
+	 */
+	private void runArchiveAction(final String errorTitle, final ArchiveWork work) {
+		final Component pane = getFrame().getGlassPane();
+		pane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		pane.setVisible(true);
+		new SwingWorker<FileSource, Object>() {
+			@Override
+			protected FileSource doInBackground() throws Exception {
+				FileSource made = work.run();
+				if( made.isDirectory()) {
+					// (lists the new folder, and waits for the event thread: not done on it)
+					addTreeNode(made);
+				}
+				return made;
+			}
+
+			@Override
+			protected void done() {
+				pane.setCursor(Cursor.getDefaultCursor());
+				pane.setVisible(false);
+				try {
+					get();
+					reloadTable();
+				} catch (java.util.concurrent.ExecutionException e) {
+					showError(errorTitle, e.getCause());
+					reloadTable();
+				} catch (Exception e) {
+					showError(errorTitle, e);
+				}
+			}
+		}.execute();
 	}
 
 	public void renameActionSet() {
@@ -1842,6 +1927,11 @@ Panel.font = javax.swing.plaf.FontUIResource
 		});
 		popup.add(itemRename);
 
+		itemCompress = new JMenuItem("Compress to Zip");
+		itemCompress.addActionListener((e)->compressActionSet());
+		itemExpand = new JMenuItem("Expand Archive");
+		itemExpand.addActionListener((e)->expandActionSet());
+
 		itemNewFolder = new JMenuItem("New Folder...");
 		itemNewFolder.addActionListener(new ActionListener() {
 
@@ -2166,6 +2256,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 						Thread.yield();
 					}
 					actionTarget = getSelectedFromTable();
+					popupSelection = actionTarget;
 					try {
 						FileSource file = null;
 
@@ -2485,6 +2576,13 @@ Panel.font = javax.swing.plaf.FontUIResource
 			if( file.canWrite()) {
 				tmp.addAll(dirWriteMenus);
 			} 
+		}
+		// Expand for an archive, Compress for anything else (not a root: there is nowhere beside it to put the result)
+		if( file.canRead() && file.getParentFile() != null ) {
+			boolean several = popupSelection != null && popupSelection.files.size() > 1
+					&& actionTarget != null && popupSelection.source == actionTarget.source;
+			itemCompress.setText(several ? "Compress "+popupSelection.files.size()+" Items to Zip" : "Compress to Zip");
+			tmp.add(ArchiveActions.isArchive(file) ? itemExpand : itemCompress);
 		}
 		for(JMenuItem mi : tmp) {
 			// just in case it's already there so we don't have two of a menu
