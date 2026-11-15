@@ -37,7 +37,7 @@ import javax.swing.WindowConstants;
 import us.bringardner.swing.gradient.GradientLook;
 
 /**
- * The small window Compress and Expand show while they run (not modal: the viewer stays usable).
+ * The small window Compress, Expand and Delete show while they run (not modal: the viewer stays usable).
  * It says what is being done; below, a bar that fills as the work goes, and how far it has got:
  * "152 of 401 (38%): docs/f234.bin" when the number of items is known first (Compress counts them;
  * a zip's index lists them), else "37 items (45%): ..." with the percentage of the archive read (a
@@ -71,7 +71,12 @@ class ArchiveProgressWindow extends JDialog implements ArchiveActions.Progress {
 	private final AtomicBoolean pending = new AtomicBoolean();
 
 	ArchiveProgressWindow(Frame owner, String message) {
-		super(owner, "Archive", false);
+		this(owner, "Archive", message);
+	}
+
+	/** With its own title (Delete uses it too). */
+	ArchiveProgressWindow(Frame owner, String title, String message) {
+		super(owner, title, false);
 		JPanel content = new JPanel(new BorderLayout(0, 8));
 		content.setBorder(BorderFactory.createEmptyBorder(12, 16, 14, 16));
 		content.add(new JLabel(message), BorderLayout.NORTH);

@@ -1376,6 +1376,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 	/** Work that makes a file or folder (an archive, an archive's folder). */
 	private interface ArchiveWork {
+		/** @return what it made, or null */
 		FileSource run(ArchiveActions.Progress progress) throws IOException;
 	}
 
@@ -1389,10 +1390,15 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * what it made, or shows the error.
 	 */
 	private void runArchiveAction(final String message, final String errorTitle, final ArchiveWork work) {
+		runProgressAction("Archive", message, errorTitle, work);
+	}
+
+	/** As {@link #runArchiveAction}, with the progress window's title (Delete uses it too). */
+	private void runProgressAction(final String title, final String message, final String errorTitle, final ArchiveWork work) {
 		final Component pane = getFrame().getGlassPane();
 		pane.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		pane.setVisible(true);
-		final ArchiveProgressWindow progress = new ArchiveProgressWindow(getFrame(), message);
+		final ArchiveProgressWindow progress = new ArchiveProgressWindow(getFrame(), title, message);
 		final javax.swing.Timer showProgress = new javax.swing.Timer(ARCHIVE_PROGRESS_DELAY_MS, e->progress.setVisible(true));
 		showProgress.setRepeats(false);
 		showProgress.start();
@@ -3511,75 +3517,47 @@ Panel.font = javax.swing.plaf.FontUIResource
 	}
 
 	protected void deletActionSet() {
-
-
-		if( actionTarget != null && actionTarget.files.size() >0 ) {
-			try {
-				MessageDialog dialog = new MessageDialog();
-
-				boolean doAll = false;
-				boolean yes = false;
-				boolean multi = actionTarget.files.size()>1;
-				// only directories effect the tree
-				List<FileSource> directories = new ArrayList<>();
-
-				for(FileSource f : actionTarget.files) {
-					if( !doAll ) {
-						String msg = null;
-						if( f.isDirectory()) {
-							msg = "Are you sure you want to delete this directory\nand all of it's children\n\n"+f.getAbsolutePath();
-						} else {
-							msg = "Are you sure you want to delete this file?\n\n"+f.getAbsolutePath();
-						}
-						dialog.setShowAppliesToAll(multi);
-						yes = dialog.showWarningDialog(msg)==MessageDialog.Response.Yes;	
-						doAll = dialog.applyToAll();
+		if( actionTarget == null || actionTarget.files.isEmpty() ) {
+			actionTarget = null;
+			return;
+		}
+		// asked here, one at a time (or for all at once); the deleting is done in the background
+		List<FileSource> confirmed = new ArrayList<>();
+		try {
+			MessageDialog dialog = new MessageDialog();
+			boolean doAll = false;
+			boolean yes = false;
+			boolean multi = actionTarget.files.size()>1;
+			for(FileSource f : actionTarget.files) {
+				if( !doAll ) {
+					String msg = null;
+					if( f.isDirectory()) {
+						msg = "Are you sure you want to delete this directory\nand all of it's children\n\n"+f.getAbsolutePath();
+					} else {
+						msg = "Are you sure you want to delete this file?\n\n"+f.getAbsolutePath();
 					}
-					if( yes) {
-						//delete a file or dir. 
-						//if dir has kids they are deleted as well
-						if( f.isDirectory()) {
-							directories.add(f);
-						}
-						deleteAll(f);
-					}
+					dialog.setShowAppliesToAll(multi);
+					yes = dialog.showWarningDialog(msg)==MessageDialog.Response.Yes;
+					doAll = dialog.applyToAll();
 				}
-
-				DefaultTreeModel model = (DefaultTreeModel) getTree().getModel();
-				FileSourceTreeNode root = (FileSourceTreeNode) model.getRoot();
-
-				for(FileSource f : directories) {
-					if( !f.exists()) {
-						FileSourceTreeNode node = searchNode(root, f.toString());
-						model.removeNodeFromParent(node);
-					}
+				if( yes) {
+					confirmed.add(f);
 				}
-
-				reloadTable();
-
-			} catch (IOException e) {
-				showError( "Error in delete",e);
 			}
-
-		} else {
-			//System.out.println("No action set");
+		} catch (IOException e) {
+			showError( "Error in delete",e);
 		}
 		actionTarget = null;
-	}
-
-	private void deleteAll(FileSource file) throws IOException {
-		if( file.isDirectory() ) {
-			FileSource[] list = file.listFiles();
-			for (FileSource f : list) {
-				deleteAll(f);
-			}
-		} 
-		if(!file.delete()) {
-			throw new IOException("Delete failed");
+		if( confirmed.isEmpty() ) {
+			return;
 		}
+		String what = confirmed.size() == 1 ? "\u201c"+confirmed.get(0).getName()+"\u201d" : confirmed.size()+" items";
+		final int workers = DeleteActions.workersFor(factory);
+		runProgressAction("Delete", "Deleting "+what+"\u2026", "Error in delete", progress->{
+			DeleteActions.delete(DeleteActions.plan(confirmed), workers, progress);
+			return null;
+		});
 	}
-
-
 
 	/** One folder of the tree that Refresh reads again. */
 	private static class RefreshedNode {
@@ -3667,11 +3645,12 @@ Panel.font = javax.swing.plaf.FontUIResource
 						}
 					}
 				}
-				// the selection, of the folders still there
+				// the selection, of the folders still there; a deleted one's folder in its place
 				List<TreePath> still = new ArrayList<>();
 				for(RefreshedNode r : nodes) {
-					if( r.exists ) {
-						still.add(r.path);
+					TreePath p = r.exists ? r.path : r.path.getParentPath();
+					if( p != null && !still.contains(p) ) {
+						still.add(p);
 					}
 				}
 				if( !still.isEmpty() ) {
