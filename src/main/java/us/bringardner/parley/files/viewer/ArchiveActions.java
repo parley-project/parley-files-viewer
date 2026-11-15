@@ -78,6 +78,13 @@ class ArchiveActions {
 		default void item(int done, String name) {
 		}
 
+		/**
+		 * How much of the archive has been read, in bytes, of its size: how far a tar's
+		 * expansion has got (a tar has no index, so the number of items isn't known first).
+		 */
+		default void bytes(long done, long total) {
+		}
+
 		/** Reports nothing. */
 		Progress NONE = new Progress() {
 		};
@@ -179,7 +186,8 @@ class ArchiveActions {
 
 	/**
 	 * As {@link #expand(FileSource)}, reporting to progress each item as it is extracted; for a
-	 * zip the total comes first, from its index. A tar has no index, so only the items are reported.
+	 * zip the total comes first, from its index. A tar has no index: it is given to tar on its
+	 * standard input, and how much of it has been read is reported (its size is known).
 	 */
 	static FileSource expand(FileSource archive, Progress progress) throws IOException {
 		ArchiveFormat format = formatOf(archive);
@@ -199,8 +207,8 @@ class ArchiveActions {
 		// (not quiet: unzip, and tar with -v, write a line for each item, which is the progress)
 		String extract = zip
 				? "unzip -d "+quote(tmp)+" "+quote(archive.getName())
-				// (tar recognizes a gzipped archive itself)
-				: "tar -xvf "+quote(archive.getName())+" -C "+quote(tmp);
+				// (from standard input: the bytes read are counted; tar recognizes a gzipped archive itself)
+				: "tar -xvf - -C "+quote(tmp);
 		AtomicInteger done = new AtomicInteger();
 		Consumer<String> lines = line->{
 			String item = null;
@@ -218,8 +226,8 @@ class ArchiveActions {
 			}
 		};
 		FileSource tmpDir = folder.getChild(tmp);
-		try {
-			run(folder, "mkdir "+quote(tmp)+" && "+extract, lines);
+		try (InputStream stdin = zip ? InputStream.nullInputStream() : new CountingInputStream(archive.getInputStream(), archive.length(), progress)) {
+			run(folder, "mkdir "+quote(tmp)+" && "+extract, lines, stdin);
 		} catch (IOException e) {
 			// what was expanded before it failed stays, where it can be seen
 			if( tmpDir.exists() ) {
@@ -297,6 +305,11 @@ class ArchiveActions {
 	 * to lines, as it is written.
 	 */
 	static void run(FileSource folder, String script, Consumer<String> lines) throws IOException {
+		run(folder, script, lines, InputStream.nullInputStream());
+	}
+
+	/** As {@link #run(FileSource, String, Consumer)}, with stdin as the commands' standard input (the caller closes it). */
+	static void run(FileSource folder, String script, Consumer<String> lines, InputStream stdin) throws IOException {
 		// exit in a script must end the script, not the viewer
 		Console.exitJvm = false;
 		// a new console takes the parser's aliases and posix mode: given back after, for any open terminal
@@ -306,7 +319,7 @@ class ArchiveActions {
 		try (PrintStream errStream = new PrintStream(err, true, StandardCharsets.UTF_8);
 				PrintStream outStream = new PrintStream(new LineOutputStream(lines), true, StandardCharsets.UTF_8)) {
 			Console console = new Console();
-			console.setStdIn(InputStream.nullInputStream());
+			console.setStdIn(stdin);
 			console.setStdOut(outStream);
 			console.setStdErr(errStream);
 			console.startIn(folder);
@@ -347,6 +360,49 @@ class ArchiveActions {
 			if( line.size() > 0 ) {
 				write('\n');
 			}
+		}
+	}
+
+	/** Reports to progress how many of a stream's bytes have been read, of its size. */
+	static class CountingInputStream extends java.io.FilterInputStream {
+		private final long total;
+		private final Progress progress;
+		private long done;
+
+		CountingInputStream(InputStream in, long total, Progress progress) {
+			super(in);
+			this.total = total;
+			this.progress = progress;
+			progress.bytes(0, total);
+		}
+
+		@Override
+		public int read() throws IOException {
+			int b = super.read();
+			if( b >= 0 ) {
+				progress.bytes(++done, total);
+			}
+			return b;
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) throws IOException {
+			int n = super.read(b, off, len);
+			if( n > 0 ) {
+				done += n;
+				progress.bytes(done, total);
+			}
+			return n;
+		}
+
+		@Override
+		public long skip(long n) throws IOException {
+			long skipped = super.skip(n);
+			if( skipped > 0 ) {
+				done += skipped;
+				progress.bytes(done, total);
+			}
+			return skipped;
 		}
 	}
 }
