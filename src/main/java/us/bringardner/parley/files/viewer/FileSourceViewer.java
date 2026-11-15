@@ -1385,8 +1385,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 	/**
 	 * Does the work in the background (a big folder, or an archive on a remote file system, can take
 	 * a while), with the wait cursor and, once it has run {@link #ARCHIVE_PROGRESS_DELAY_MS}, a small
-	 * window saying what is being done; then shows what it made, in the tree and the table, or the
-	 * error.
+	 * window saying what is being done; then refreshes the tree's folder and the table to show
+	 * what it made, or shows the error.
 	 */
 	private void runArchiveAction(final String message, final String errorTitle, final ArchiveWork work) {
 		final Component pane = getFrame().getGlassPane();
@@ -1399,12 +1399,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		new SwingWorker<FileSource, Object>() {
 			@Override
 			protected FileSource doInBackground() throws Exception {
-				FileSource made = work.run();
-				if( made.isDirectory()) {
-					// (lists the new folder, and waits for the event thread: not done on it)
-					addTreeNode(made);
-				}
-				return made;
+				return work.run();
 			}
 
 			@Override
@@ -1415,10 +1410,11 @@ Panel.font = javax.swing.plaf.FontUIResource
 				pane.setVisible(false);
 				try {
 					get();
-					reloadTable();
+					// the tree's folder (a new folder in it gets its node as a listing makes them) and the table
+					forceRefresh();
 				} catch (java.util.concurrent.ExecutionException e) {
 					showError(errorTitle, e.getCause());
-					reloadTable();
+					forceRefresh();
 				} catch (Exception e) {
 					showError(errorTitle, e);
 				}
@@ -2637,6 +2633,9 @@ Panel.font = javax.swing.plaf.FontUIResource
 			tmp.add(ArchiveActions.isArchive(file) ? itemExpand : itemCompress);
 		}
 		for(JMenuItem mi : tmp) {
+			if( mi == null ) {
+				continue;   // (Open With, Edit, Print... are only made where the desktop supports them)
+			}
 			// just in case it's already there so we don't have two of a menu
 			popup.remove(mi);
 			popup.add(mi);

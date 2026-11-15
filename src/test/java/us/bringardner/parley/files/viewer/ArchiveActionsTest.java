@@ -89,9 +89,10 @@ public class ArchiveActionsTest {
 		assertTrue(ArchiveActions.isArchive(zip));
 
 		FileSource out = ArchiveActions.expand(zip);
-		// a folder named src is there already: the new one is numbered
+		// the archive holds one folder, src: that is what comes out (not src/src), numbered as src is there
 		assertEquals("src 2", out.getName());
-		assertEquals(Set.of("src/a.txt=A", "src/sub/it's here.txt=B"), contents(dir.resolve("src 2")));
+		assertEquals(Set.of("a.txt=A", "sub/it's here.txt=B"), contents(dir.resolve("src 2")));
+		assertNoneExpanding();
 	}
 
 	@Test
@@ -107,6 +108,7 @@ public class ArchiveActionsTest {
 		assertEquals("Archive 2.zip", zip3.getName());
 
 		FileSource out = ArchiveActions.expand(zip);
+		// two things in it: they go in a folder named after the archive
 		assertEquals("Archive", out.getName());
 		assertEquals(Set.of("one.txt=1", "-two.txt=2"), contents(dir.resolve("Archive")));
 	}
@@ -125,8 +127,35 @@ public class ArchiveActionsTest {
 		FileSource f = fs(tgz);
 		assertTrue(ArchiveActions.isArchive(f));
 		FileSource out = ArchiveActions.expand(f);
-		assertEquals("photos", out.getName());
-		assertEquals(Set.of("trip/day1.jpg=pixels"), contents(dir.resolve("photos")));
+		// one folder, trip, in it: trip comes out
+		assertEquals("trip", out.getName());
+		assertEquals(Set.of("day1.jpg=pixels"), contents(dir.resolve("trip")));
+		assertNoneExpanding();
+	}
+
+	@Test
+	public void oneFileComesOutBesideTheArchive() throws Exception {
+		write("report.pdf", "R");
+		FileSource zip = ArchiveActions.compress(fs(dir), List.of(fs(dir.resolve("report.pdf"))));
+		FileSource out = ArchiveActions.expand(zip);
+		// report.pdf is there: the number goes before the extension
+		assertEquals("report 2.pdf", out.getName());
+		assertEquals("R", Files.readString(dir.resolve("report 2.pdf")));
+		assertNoneExpanding();
+	}
+
+	/** no hidden folder of an expansion is left behind */
+	private void assertNoneExpanding() throws IOException {
+		try (Stream<Path> s = Files.list(dir)) {
+			assertFalse(s.anyMatch(p->p.getFileName().toString().startsWith(ArchiveActions.EXPANDING_PREFIX)));
+		}
+	}
+
+	@Test
+	public void extensions() {
+		assertEquals(List.of("report", ".pdf"), List.of(ArchiveActions.splitExtension("report.pdf")));
+		assertEquals(List.of("README", ""), List.of(ArchiveActions.splitExtension("README")));
+		assertEquals(List.of(".profile", ""), List.of(ArchiveActions.splitExtension(".profile")));
 	}
 
 	@Test
@@ -184,8 +213,8 @@ public class ArchiveActionsTest {
 
 			FileSource out = ArchiveActions.expand(zip);
 			assertEquals("docs 2", out.getName());
-			assertEquals("A", read(out.getChild("docs/a.txt")));
-			assertEquals("B", read(out.getChild("docs/sub/b.txt")));
+			assertEquals("A", read(out.getChild("a.txt")));
+			assertEquals("B", read(out.getChild("sub/b.txt")));
 
 			// a gzipped tar
 			FileSource tgz = home.getChild("photos.tgz");
@@ -198,8 +227,11 @@ public class ArchiveActionsTest {
 				}
 			}
 			FileSource photos = ArchiveActions.expand(tgz);
-			assertEquals("photos", photos.getName());
-			assertEquals("pixels", read(photos.getChild("trip/day1.jpg")));
+			assertEquals("trip", photos.getName());
+			assertEquals("pixels", read(photos.getChild("day1.jpg")));
+			for(String n : home.list()) {
+				assertFalse(n.startsWith(ArchiveActions.EXPANDING_PREFIX), n);
+			}
 
 			// a failure says what the command said
 			FileSource bad = write(home.getChild("bad.zip"), "not a zip at all");
