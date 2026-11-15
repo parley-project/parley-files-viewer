@@ -241,4 +241,103 @@ public class ArchiveActionsTest {
 			memory.disConnect();
 		}
 	}
+
+	/** What a Compress or Expand reported. */
+	static class Recorded implements ArchiveActions.Progress {
+		Integer total;
+		final List<String> names = new java.util.ArrayList<>();
+		final List<Integer> counts = new java.util.ArrayList<>();
+
+		@Override
+		public void total(int count) {
+			total = count;
+		}
+
+		@Override
+		public void item(int done, String name) {
+			counts.add(done);
+			names.add(name);
+		}
+
+		/** the counts went 1, 2, 3 ... */
+		void assertCounted() {
+			for(int i = 0; i < counts.size(); i++) {
+				assertEquals(i+1, counts.get(i));
+			}
+		}
+	}
+
+	@Test
+	public void progressOfAZip() throws Exception {
+		write("src/a.txt", "A");
+		write("src/sub/b.txt", "B");
+		Recorded compressed = new Recorded();
+		FileSource zip = ArchiveActions.compress(fs(dir), List.of(fs(dir.resolve("src"))), compressed);
+		// counted first: src, a.txt, sub and b.txt; then each as it was added
+		assertEquals(4, compressed.total);
+		assertEquals(Set.of("src/", "src/a.txt", "src/sub/", "src/sub/b.txt"), new TreeSet<>(compressed.names));
+		compressed.assertCounted();
+
+		Recorded expanded = new Recorded();
+		ArchiveActions.expand(zip, expanded);
+		// the total from the zip's index; the names as they are in the archive (not the hidden folder's)
+		assertEquals(4, expanded.total);
+		assertEquals(Set.of("src/", "src/a.txt", "src/sub/", "src/sub/b.txt"), new TreeSet<>(expanded.names));
+		expanded.assertCounted();
+	}
+
+	@Test
+	public void progressOfATar() throws Exception {
+		Path tgz = dir.resolve("photos.tgz");
+		try (OutputStream file = Files.newOutputStream(tgz);
+				OutputStream gz = new java.util.zip.GZIPOutputStream(file);
+				TarWriter tar = new TarWriter(gz)) {
+			for(String n : List.of("trip/day1.jpg", "trip/day2.jpg")) {
+				byte [] bytes = n.getBytes();
+				try (OutputStream e = tar.putEntry(TarArchiveEntry.builder(n).size(bytes.length).build())) {
+					e.write(bytes);
+				}
+			}
+		}
+		Recorded expanded = new Recorded();
+		ArchiveActions.expand(fs(tgz), expanded);
+		// a tar has no index: no total, only the items
+		assertEquals(null, expanded.total);
+		assertEquals(List.of("trip/day1.jpg", "trip/day2.jpg"), expanded.names);
+		expanded.assertCounted();
+	}
+
+	@Test
+	public void progressOnAFileSystemThatIsNotLocal() throws Exception {
+		MemoryFileSourceFactory memory = new MemoryFileSourceFactory();
+		memory.connect();
+		try {
+			FileSource home = memory.createFileSource("/home/tony");
+			home.mkdirs();
+			write(home.getChild("docs/a.txt"), "A");
+			write(home.getChild("docs/b.txt"), "B");
+			Recorded compressed = new Recorded();
+			FileSource zip = ArchiveActions.compress(home, List.of(home.getChild("docs")), compressed);
+			assertEquals(3, compressed.total);
+			assertEquals(3, compressed.names.size(), compressed.names.toString());
+			Recorded expanded = new Recorded();
+			ArchiveActions.expand(zip, expanded);
+			assertEquals(3, expanded.total);
+			assertEquals(Set.of("docs/", "docs/a.txt", "docs/b.txt"), new TreeSet<>(expanded.names));
+		} finally {
+			memory.disConnect();
+		}
+	}
+
+	@Test
+	public void linesAsTheyAreWritten() throws Exception {
+		List<String> got = new java.util.ArrayList<>();
+		try (ArchiveActions.LineOutputStream out = new ArchiveActions.LineOutputStream(got::add)) {
+			out.write("one\ntwo\r\nthr".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+			assertEquals(List.of("one", "two"), got);
+			out.write("ee \u00e9".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+		}
+		// what is left at the end is a line too
+		assertEquals(List.of("one", "two", "three \u00e9"), got);
+	}
 }
