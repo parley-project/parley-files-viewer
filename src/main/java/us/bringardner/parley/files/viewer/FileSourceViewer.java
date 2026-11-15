@@ -380,47 +380,65 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			return dir;
 		}
 
-		public void reset() {
-			try {
+		/**
+		 * The paths of the folders under this node now, or null if it has never been listed (it is
+		 * listed when it is opened). Event thread.
+		 */
+		List<String> loadedChildPaths() {
+			if( children == null ) {
+				return null;
+			}
+			List<String> ret = new ArrayList<>();
+			for(Object kid : children) {
+				if( kid instanceof FileSourceTreeNode ) {
+					ret.add(((FileSourceTreeNode) kid).dir.getAbsolutePath());
+				}
+			}
+			return ret;
+		}
 
-				List<String> names = new ArrayList<>();
-				List<FileSourceTreeNode> removeNodes = new ArrayList<>();
-				FileSource[] kids = dir.listFiles();
-				for(FileSource kid : kids) {
-					if( kid.isDirectory()) {
-						FileSourceTreeNode node = findNode(kid);
-						if( node == null ) {
-							addTreeNode(kid);
-						} else {
-							node.reset();
-						}
+		/**
+		 * The folders in this one now (hidden ones only when they are shown), sorted as the tree
+		 * sorts them. Lists the folder: not on the event thread.
+		 */
+		List<FileSource> listFolders() throws IOException {
+			dir.refresh();
+			List<FileSource> ret = new ArrayList<>();
+			FileSource[] kids = dir.listFiles();
+			if( kids != null ) {
+				for(FileSource f : kids) {
+					if( f.isDirectory() && (showHidden || !(f.isHidden() || f.getName().startsWith("."))) ) {
+						ret.add(f);
 					}
 				}
-				if( children != null ) {
-					for(int idx=0,sz=children.size(); idx < sz; idx++) {
-						TreeNode kid = children.get(idx);
-						if (kid instanceof FileSourceTreeNode) {
-							FileSourceTreeNode node = (FileSourceTreeNode) kid;
-							if(!node.dir.exists() 
-									|| 
-									!node.dir.isDirectory() 
-									|| 
-									!dir.isChildOfMine(node.dir)
-									) {
-								removeNodes.add(node);
-							} else {
-								names.add(node.dir.getAbsolutePath());
-							}
-						}
-					}
-				}				
-
-			} catch (IOException e) {
-
-				showError("Node Reset", e);
 			}
+			ret.sort((a, b)->a.getName().compareToIgnoreCase(b.getName()));
+			return ret;
+		}
 
-
+		/**
+		 * Makes this node's children the folders given, in their order: a folder still here keeps
+		 * its node (and what is loaded and open under it), a new one gets its node from added, and
+		 * a node whose folder is gone is dropped. Event thread; the caller tells the tree's model.
+		 */
+		void setFolders(List<FileSource> folders, Map<String, FileSourceTreeNode> added) {
+			Map<String, FileSourceTreeNode> old = new HashMap<>();
+			if( children != null ) {
+				for(Object kid : children) {
+					if( kid instanceof FileSourceTreeNode ) {
+						FileSourceTreeNode n = (FileSourceTreeNode) kid;
+						old.put(n.dir.getAbsolutePath(), n);
+					}
+				}
+			}
+			removeAllChildren();
+			for(FileSource f : folders) {
+				String key = f.getAbsolutePath();
+				FileSourceTreeNode n = old.containsKey(key) ? old.get(key) : added.get(key);
+				if( n != null ) {
+					add(n);
+				}
+			}
 		}
 	}
 
@@ -3583,45 +3601,105 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 
 
+	/** One folder of the tree that Refresh reads again. */
+	private static class RefreshedNode {
+		final TreePath path;
+		final FileSourceTreeNode node;
+		/** the folders under it before, or null if it was never listed (nothing to bring up to date) */
+		final List<String> known;
+		boolean exists;
+		List<FileSource> folders;
+		/** nodes for the folders that weren't under it before, made in the background */
+		final Map<String, FileSourceTreeNode> added = new HashMap<>();
+
+		RefreshedNode(TreePath path, FileSourceTreeNode node) {
+			this.path = path;
+			this.node = node;
+			this.known = node.loadedChildPaths();
+		}
+	}
+
+	/**
+	 * Refresh: reads the folders selected in the tree again, and the table's folder. The folders
+	 * are listed in the background (they used to be listed here, on the event thread, which also
+	 * failed: making the node of a folder new to the tree waits for the event thread); then the
+	 * tree is brought up to date in place: new folders are added, gone ones removed, and what is
+	 * open stays open.
+	 */
 	public void forceRefresh() {
-
-
-		JTree tree = getTree();
-		TreePath [] path = tree.getSelectionPaths();
-		if( path != null) {
-			for (TreePath tp : path) {
-				Object node = tp.getLastPathComponent();
-				if (node instanceof FileSourceTreeNode) {
-					FileSourceTreeNode tn = (FileSourceTreeNode) node;
-
-					try {
-						if( !tn.getDir().exists()) {
-							DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-							model.removeNodeFromParent(tn);
-						} else {
-							tn.reset();
-						}
-					} catch (IOException e) {
-						showError("Error in refresh",e);
-					}
+		final JTree tree = getTree();
+		final TreePath [] paths = tree.getSelectionPaths();
+		final List<RefreshedNode> nodes = new ArrayList<>();
+		if( paths != null ) {
+			for (TreePath tp : paths) {
+				if( tp.getLastPathComponent() instanceof FileSourceTreeNode ) {
+					nodes.add(new RefreshedNode(tp, (FileSourceTreeNode) tp.getLastPathComponent()));
 				}
 			}
 		}
-		if( path != null && path.length>0) {			
-			setSelectionPath(path[0]);
-			if( path.length > 1 ) {
-				tree.setSelectionPaths(path);
+		new SwingWorker<Object, Object>() {
+			@Override
+			protected Object doInBackground() throws Exception {
+				for(RefreshedNode r : nodes) {
+					r.node.getDir().refresh();
+					r.exists = r.node.getDir().exists();
+					if( r.exists && r.known != null ) {
+						r.folders = r.node.listFolders();
+						for(FileSource f : r.folders) {
+							String key = f.getAbsolutePath();
+							if( !r.known.contains(key) ) {
+								r.added.put(key, new FileSourceTreeNode(f));
+							}
+						}
+					}
+				}
+				return null;
 			}
-		}
-		TreeModel treeModel = tree.getModel();
-		if (treeModel instanceof DefaultTreeModel) {
-			DefaultTreeModel dtm = (DefaultTreeModel) treeModel;
-			dtm.reload();
-		}
-		FileTableModel tableModel = (FileTableModel) getTable().getModel();
-		setTableModel(tableModel.getDir());
 
-
+			@Override
+			protected void done() {
+				try {
+					get();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					return;
+				} catch (java.util.concurrent.ExecutionException e) {
+					showError("Error in refresh", e.getCause());
+					return;
+				}
+				DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+				for(RefreshedNode r : nodes) {
+					if( !r.exists ) {
+						if( r.node.getParent() != null ) {
+							model.removeNodeFromParent(r.node);
+						}
+					} else if( r.folders != null ) {
+						// what is open under it stays open: its nodes are kept
+						List<TreePath> open = new ArrayList<>();
+						java.util.Enumeration<TreePath> e = tree.getExpandedDescendants(r.path);
+						if( e != null ) {
+							open.addAll(Collections.list(e));
+						}
+						r.node.setFolders(r.folders, r.added);
+						model.nodeStructureChanged(r.node);
+						for(TreePath tp : open) {
+							tree.expandPath(tp);
+						}
+					}
+				}
+				// the selection, of the folders still there
+				List<TreePath> still = new ArrayList<>();
+				for(RefreshedNode r : nodes) {
+					if( r.exists ) {
+						still.add(r.path);
+					}
+				}
+				if( !still.isEmpty() ) {
+					tree.setSelectionPaths(still.toArray(new TreePath[0]));
+				}
+			}
+		}.execute();
+		reloadTable();
 	}
 
 	public void setSelectionPath(TreePath treePath ) {
