@@ -2230,6 +2230,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 		table.setAutoCreateRowSorter(true);
 		table.setDragEnabled(true);
+		// the theme's header colors: the look and feel's header ignores the theme's background
+		table.getTableHeader().setDefaultRenderer(new ThemedHeaderRenderer());
 
 
 		table.setDefaultRenderer(Date.class, new FileTableCellRenderer());
