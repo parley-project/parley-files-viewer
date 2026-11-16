@@ -2471,6 +2471,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 								setTitle(e.getMessage());
 							}
 							setStatus(currentDir);
+							recordVisit(currentDir);
 
 						}						
 					}
@@ -2702,6 +2703,58 @@ Panel.font = javax.swing.plaf.FontUIResource
 				worker.execute();
 			}
 		});
+	}
+
+	/** The folders this window has shown, oldest first, and which of them is shown now. */
+	private final List<FileSource> history = new ArrayList<>();
+	private int historyAt = -1;
+	private static final int HISTORY_SIZE = 100;
+
+	/**
+	 * Notes that a folder is shown. Going back or forward has already moved historyAt to the
+	 * folder, so arriving there changes nothing; any other folder drops what was ahead of the
+	 * one shown and goes on the end.
+	 */
+	private void recordVisit(FileSource dir) {
+		if( dir == null || (historyAt >= 0 && dir.equals(history.get(historyAt))) ) {
+			return;
+		}
+		while( history.size() > historyAt + 1 ) {
+			history.remove(history.size() - 1);
+		}
+		history.add(dir);
+		if( history.size() > HISTORY_SIZE ) {
+			history.remove(0);
+		}
+		historyAt = history.size() - 1;
+	}
+
+	/** Go > Back (by) steps: the folder shown before (negative) or after (positive) this one. */
+	private void goInHistory(int by) {
+		int to = historyAt + by;
+		if( to >= 0 && to < history.size() ) {
+			historyAt = to;
+			goToFolder(history.get(to));
+		}
+	}
+
+	/** Go > Go to Folder...: asks for a path and shows that folder. */
+	private void actionGoToFolder() {
+		String start = currentNode == null || currentNode.getDir() == null ? "" : currentNode.getDir().getAbsolutePath();
+		String path = MessageDialog.showInputDialog("Type the folder to go to", "Go to Folder", start);
+		if( path == null || path.trim().isEmpty() ) {
+			return;
+		}
+		try {
+			FileSource dir = factory.createFileSource(path.trim());
+			if( dir != null && dir.isDirectory() ) {
+				goToFolder(dir);
+			} else {
+				MessageDialog.showErrorDialog("Not a folder: " + path.trim(), "Go to Folder");
+			}
+		} catch (IOException e) {
+			showError("Can't go to " + path.trim(), e);
+		}
 	}
 
 	/** The folder that holds the one shown, or null at the top. */
@@ -3059,7 +3112,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * <li>Edit: Find...
 	 * <li>View: Show Hidden Files, Show File Extensions (the same settings as the toolbar's menu),
 	 * Refresh
-	 * <li>Go: Up, Recent Files
+	 * <li>Go: Back, Forward, Up, Recent Files, Go to Folder...
 	 * </ul>
 	 */
 	private void installStandardMenus() {
@@ -3152,7 +3205,12 @@ Panel.font = javax.swing.plaf.FontUIResource
 				goToFolder(above);
 			}
 		});
+		JMenuItem back = StandardMenus.item("Back", StandardMenus.keys(KeyEvent.VK_OPEN_BRACKET, 0), ()->goInHistory(-1));
+		JMenuItem forward = StandardMenus.item("Forward", StandardMenus.keys(KeyEvent.VK_CLOSE_BRACKET, 0), ()->goInHistory(1));
+		go.add(back);
+		go.add(forward);
 		go.add(up);
+		go.addSeparator();
 		try {
 			recentFiles = new RecentFileMenu(pref);
 			recentFiles.addActionListener(e->openRecent(e.getSource()));
@@ -3160,8 +3218,12 @@ Panel.font = javax.swing.plaf.FontUIResource
 		} catch (IOException e) {
 			// the menu is a convenience: the viewer works without it
 		}
+		go.addSeparator();
+		go.add(StandardMenus.item("Go to Folder...", StandardMenus.keys(KeyEvent.VK_G, StandardMenus.SHIFT), this::actionGoToFolder));
 		go.addMenuListener(new javax.swing.event.MenuListener() {
 			public void menuSelected(javax.swing.event.MenuEvent e) {
+				back.setEnabled(historyAt > 0);
+				forward.setEnabled(historyAt >= 0 && historyAt < history.size() - 1);
 				up.setEnabled(enclosingFolder() != null);
 			}
 			public void menuDeselected(javax.swing.event.MenuEvent e) {
