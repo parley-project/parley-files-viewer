@@ -8,6 +8,12 @@
   comes with fsh) is built for Java 17; on Java 11 it was left out, so New Remote Session's dialog
   had no "Save to keychain" box for an SFTP (or FTP, JDBC) password. Eclipse ran the viewer on
   Java 11 because the project was Java 11. The Parley libraries stay at Java 11.
+- **New Remote Session starts with the last session that connected**: its kind of file system and
+  settings (`LastConnectionSettings`, in the viewer's preferences under `connections`). The password
+  comes back only as a credential reference, such as the `@keychain:parley/sftp/tony@host` that
+  "Save to keychain" leaves in the field; a typed password is never written. Before, the form opened
+  blank each time, and a keychain entry can't be picked from "From store..." (a keychain can't be
+  listed), so a saved password couldn't be used again.
 
 ### Removed (2026-11-12: the JavaFX viewer)
 

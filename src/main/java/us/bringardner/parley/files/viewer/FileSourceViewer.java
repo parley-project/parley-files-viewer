@@ -2930,13 +2930,17 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 				public void actionPerformed(ActionEvent arg0) {
 					FactoryPropertiesDialog dialog = new FactoryPropertiesDialog();
-					dialog.showDialog(new MemoryFileSourceFactory());
+					// starts with the last session that connected (its password only as an @keychain: name)
+					LastConnectionSettings last = new LastConnectionSettings();
+					FileSourceFactory start = last.restore();
+					dialog.showDialog(start != null ? start : new MemoryFileSourceFactory());
 					if( !dialog.isCancel() ) {
 						FileSourceFactory f = dialog.getFactory();
 						FileSourceViewer b = new FileSourceViewer();
 						try {
 							b.setup(f,true);
-							b.show();				
+							last.remember(f);
+							b.show();
 						}catch(Exception ex) {
 							MessageDialog.showErrorDialog( ex.getMessage(), f.getTitle());
 							try {
