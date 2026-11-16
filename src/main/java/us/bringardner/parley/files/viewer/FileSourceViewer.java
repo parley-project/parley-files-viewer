@@ -2738,6 +2738,20 @@ Panel.font = javax.swing.plaf.FontUIResource
 		}
 	}
 
+	/** Go > Home: your home folder on this computer; on a remote session, the folder it signs in to. */
+	private void actionGoHome() {
+		try {
+			FileSource home = factory instanceof FileProxyFactory
+					? factory.createFileSource(System.getProperty("user.home"))
+					: factory.getCurrentDirectory();
+			if( home != null ) {
+				goToFolder(home);
+			}
+		} catch (IOException e) {
+			showError("Can't go to the home folder", e);
+		}
+	}
+
 	/** Go > Go to Folder...: asks for a path and shows that folder. */
 	private void actionGoToFolder() {
 		String start = currentNode == null || currentNode.getDir() == null ? "" : currentNode.getDir().getAbsolutePath();
@@ -3112,7 +3126,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * <li>Edit: Find...
 	 * <li>View: Show Hidden Files, Show File Extensions (the same settings as the toolbar's menu),
 	 * Refresh
-	 * <li>Go: Back, Forward, Up, Recent Files, Go to Folder...
+	 * <li>Go: Back, Forward, Up, Home, Recent Files, Go to Folder...
 	 * </ul>
 	 */
 	private void installStandardMenus() {
@@ -3210,6 +3224,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		go.add(back);
 		go.add(forward);
 		go.add(up);
+		go.add(StandardMenus.item("Home", StandardMenus.keys(KeyEvent.VK_H, StandardMenus.SHIFT), this::actionGoHome));
 		go.addSeparator();
 		try {
 			recentFiles = new RecentFileMenu(pref);
