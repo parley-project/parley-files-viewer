@@ -17,8 +17,8 @@ Parley library: it uses the library the same way your own application would, so 
 Formerly `com.bringardner:bjl_file_system_viewer` (BjlFileSystemViewer), with packages under
 `us.bringardner.io.filesource.viewer`; they are now `us.bringardner.parley.files.viewer`.
 
-- **Java 11** or later, like the other Parley modules (the "Open terminal" action uses
-  [fsh](https://github.com/parley-project/parley-fsh), which runs on Java 11 too)
+- **Java 17** or later (the Parley libraries need only Java 11): the keychain, where a connection
+  dialog's "Save to keychain" keeps a password, needs Java 17, and on Java 11 that box isn't there
 - Built on parley-core, parley-io, parley-net, parley-files, parley-files-swing, parley-files-sftp (with its parley-ssh provider), parley-files-jdbc
   and [swing-widgets](https://github.com/parley-project/swing-widgets), which now holds the
   gradient buttons, dialogs and fields that used to be the viewer's `us.bringardner.swing` package
