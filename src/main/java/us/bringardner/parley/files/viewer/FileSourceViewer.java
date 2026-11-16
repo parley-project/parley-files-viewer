@@ -90,6 +90,7 @@ import java.util.prefs.Preferences;
 import javax.net.ssl.TrustManager;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -2662,7 +2663,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		JPanel status = getStatusPanel();
 		status.removeAll();
 		setTitle(dir.getAbsolutePath());
-		status.add(new FileComboBoxPanel(dir,new ActionListener() {
+		ActionListener goTo = new ActionListener() {
 
 
 			public void actionPerformed(ActionEvent e) {
@@ -2680,7 +2681,22 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 				}				
 			}
-		}));
+		};
+
+		// One click up to the enclosing folder (the drop-downs below pick any folder on the path)
+		JButton up = new JButton("\u2191");
+		up.setToolTipText("Up one folder");
+		up.setFocusable(false);
+		FileSource parent = null;
+		try {
+			parent = dir.getParentFile();
+		} catch (IOException e) {
+		}
+		final FileSource upTo = parent;
+		up.setEnabled(upTo != null);
+		up.addActionListener(e->goTo.actionPerformed(new ActionEvent(upTo, ActionEvent.ACTION_PERFORMED, "up")));
+		status.add(up);
+		status.add(new FileComboBoxPanel(dir,goTo));
 		status.updateUI();
 
 	}
