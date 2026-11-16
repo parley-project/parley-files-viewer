@@ -35,8 +35,11 @@ import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.HeadlessException;
+import java.awt.GraphicsConfiguration;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Taskbar;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -2915,6 +2918,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 						try {
 							FileSourceViewer window = new FileSourceViewer();
 							window.setup(FileSourceFactory.getDefaultFactory(),true);
+							window.cascadeFrom(FileSourceViewer.this);
 							window.show();
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -2940,6 +2944,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 						try {
 							b.setup(f,true);
 							last.remember(f);
+							b.cascadeFrom(FileSourceViewer.this);
 							b.show();
 						}catch(Exception ex) {
 							MessageDialog.showErrorDialog( ex.getMessage(), f.getTitle());
@@ -3203,6 +3208,37 @@ Panel.font = javax.swing.plaf.FontUIResource
 		} catch (IOException e) {
 			showError("Can't open "+file.getAbsolutePath(), e);
 		}
+	}
+
+	/** How far down and to the right a new window sits from the window that opened it. */
+	private static final int WINDOW_OFFSET = 30;
+
+	/**
+	 * Puts this window the same size as the window that opened it, down and to the right of it,
+	 * so the opener's title bar stays visible. A window that would run off the screen goes back
+	 * to the screen's top left corner instead.
+	 */
+	private void cascadeFrom(FileSourceViewer opener) {
+		JFrame parent = opener.getFrame();
+		JFrame frame = getFrame();
+		frame.setSize(parent.getSize());
+		GraphicsConfiguration screen = parent.getGraphicsConfiguration();
+		Rectangle area = screen.getBounds();
+		Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(screen);
+		int minX = area.x + insets.left;
+		int minY = area.y + insets.top;
+		int maxX = area.x + area.width - insets.right;
+		int maxY = area.y + area.height - insets.bottom;
+		Point at = parent.getLocation();
+		int x = at.x + WINDOW_OFFSET;
+		int y = at.y + WINDOW_OFFSET;
+		if( x + frame.getWidth() > maxX ) {
+			x = minX;
+		}
+		if( y + frame.getHeight() > maxY ) {
+			y = minY;
+		}
+		frame.setLocation(x, y);
 	}
 
 	/** One of the viewer's own items, under its standard name and shortcut. */
