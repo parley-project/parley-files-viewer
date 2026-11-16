@@ -38,12 +38,13 @@ import us.bringardner.swing.menu.StandardMenus;
  */
 public class TestViewerMenus {
 
-	/** File, Edit and View ("-" a separator; Print only where the system prints). */
+	/** File, Edit, View and Go ("-" a separator; Print only where the system prints). */
 	public static final List<String> FILE = List.of("New Window", "New Remote Session...", "New Terminal", "New Folder...",
-			"-", "Open", "Open With...", "Edit", "Edit With...", "Print", "Recent Files", "-", "Start Here Next Time",
+			"-", "Open", "Open With...", "Edit", "Edit With...", "Print", "-", "Start Here Next Time",
 			"Set Start Directory...", "-", "Close");
 	public static final List<String> EDIT = List.of("Copy", "Paste", "-", "Rename...", "Delete", "-", "Find...");
 	public static final List<String> VIEW = List.of("Show Hidden Files", "Show File Extensions", "-", "Refresh");
+	public static final List<String> GO = List.of("Up", "Recent Files");
 
 	/** A menu's items as the lists above have them, without what StandardMenus adds off macOS. */
 	public static List<String> names(List<String> items, boolean canPrint) {
@@ -63,7 +64,7 @@ public class TestViewerMenus {
 			SwingUtilities.invokeAndWait(()->{
 				viewer.setup(FileSourceFactory.fileProxyFactory, true);
 				JMenuBar bar = viewer.getFrame().getJMenuBar();
-				for(int i = 0; i < bar.getMenuCount() && i < 3; i++) {
+				for(int i = 0; i < bar.getMenuCount() && i < 4; i++) {
 					JMenu m = bar.getMenu(i);
 					List<String> items = new ArrayList<>();
 					for(int j = 0; j < m.getItemCount(); j++) {
@@ -82,6 +83,7 @@ public class TestViewerMenus {
 			assertEquals(names(FILE, canPrint), file);
 			assertEquals(EDIT, menus.get(1));
 			assertEquals(VIEW, menus.get(2));
+			assertEquals(GO, menus.get(3));
 		} finally {
 			if( viewer.getFrame() != null ) {
 				viewer.getFrame().dispose();

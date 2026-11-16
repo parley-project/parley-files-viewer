@@ -95,6 +95,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import us.bringardner.swing.menu.StandardMenus;
 import javax.swing.JMenuItem;
@@ -2669,16 +2670,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			public void actionPerformed(ActionEvent e) {
 				Object obj = e.getSource();
 				if (obj != null && obj instanceof FileSource) {
-					FileSource f = (FileSource) obj;
-					findInTree(f, path->{
-						if( path != null ) {
-							FileSourceTreeNode lastNode = (FileSourceTreeNode) path.getLastPathComponent();
-							FileSourceTreeLoadingWorking worker = new FileSourceTreeLoadingWorking(lastNode, path, getTree());
-							worker.execute();
-						}
-					});
-
-
+					goToFolder((FileSource) obj);
 				}				
 			}
 		};
@@ -2699,6 +2691,26 @@ Panel.font = javax.swing.plaf.FontUIResource
 		status.add(new FileComboBoxPanel(dir,goTo));
 		status.updateUI();
 
+	}
+
+	/** Shows a folder: finds it in the tree, selects it and loads it. */
+	private void goToFolder(FileSource f) {
+		findInTree(f, path->{
+			if( path != null ) {
+				FileSourceTreeNode lastNode = (FileSourceTreeNode) path.getLastPathComponent();
+				FileSourceTreeLoadingWorking worker = new FileSourceTreeLoadingWorking(lastNode, path, getTree());
+				worker.execute();
+			}
+		});
+	}
+
+	/** The folder that holds the one shown, or null at the top. */
+	private FileSource enclosingFolder() {
+		try {
+			return currentNode == null || currentNode.getDir() == null ? null : currentNode.getDir().getParentFile();
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 	public static TreePath getPath(TreeNode treeNode) {
@@ -3047,6 +3059,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * <li>Edit: Find...
 	 * <li>View: Show Hidden Files, Show File Extensions (the same settings as the toolbar's menu),
 	 * Refresh
+	 * <li>Go: Up, Recent Files
 	 * </ul>
 	 */
 	private void installStandardMenus() {
@@ -3075,13 +3088,6 @@ Panel.font = javax.swing.plaf.FontUIResource
 		menus.file.add(StandardMenus.item("Edit With...", ()->forSelectedFiles(false, this::editWith)));
 		if( Printing.isAvailable() ) {
 			menus.file.add(StandardMenus.item("Print", ()->forSelectedFiles(false, this::print)));
-		}
-		try {
-			recentFiles = new RecentFileMenu(pref);
-			recentFiles.addActionListener(e->openRecent(e.getSource()));
-			menus.file.add(recentFiles);
-		} catch (IOException e) {
-			// the menu is a convenience: the viewer works without it
 		}
 		menus.file.addSeparator();
 		menus.file.add(StandardMenus.item("Start Here Next Time", this::startHereNextTime));
@@ -3138,7 +3144,33 @@ Panel.font = javax.swing.plaf.FontUIResource
 		menus.view.addSeparator();
 		menus.view.add(StandardMenus.item("Refresh", KeyEvent.VK_R, this::refreshAll));
 
-		menus.install(getFrame());
+		// Go: where to go from here, as in Finder
+		JMenu go = new JMenu("Go");
+		JMenuItem up = StandardMenus.item("Up", StandardMenus.keys(KeyEvent.VK_UP, 0), ()->{
+			FileSource above = enclosingFolder();
+			if( above != null ) {
+				goToFolder(above);
+			}
+		});
+		go.add(up);
+		try {
+			recentFiles = new RecentFileMenu(pref);
+			recentFiles.addActionListener(e->openRecent(e.getSource()));
+			go.add(recentFiles);
+		} catch (IOException e) {
+			// the menu is a convenience: the viewer works without it
+		}
+		go.addMenuListener(new javax.swing.event.MenuListener() {
+			public void menuSelected(javax.swing.event.MenuEvent e) {
+				up.setEnabled(enclosingFolder() != null);
+			}
+			public void menuDeselected(javax.swing.event.MenuEvent e) {
+			}
+			public void menuCanceled(javax.swing.event.MenuEvent e) {
+			}
+		});
+
+		menus.install(getFrame(), go);
 	}
 
 	private RecentFileMenu recentFiles;
