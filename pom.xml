@@ -22,6 +22,11 @@
 		<!-- Written to the jar manifest as Automatic-Module-Name -->
 		<parley.moduleName>us.bringardner.parley.files.viewer</parley.moduleName>
 		<jna.version>5.19.1</jna.version>
+		<!-- Java 17, not Parley's base level 11: the keychain provider (parley-credentials-keychain,
+		     through fsh) is built for Java 17, and on Java 11 it is left out, so a connection
+		     dialog can't save a password to the keychain. An application, so it can ask for more
+		     than the libraries do. parley-launcher's minimum Java follows this too. -->
+		<maven.compiler.release>17</maven.compiler.release>
 	</properties>
 
 	<profiles>

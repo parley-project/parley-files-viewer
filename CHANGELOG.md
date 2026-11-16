@@ -2,6 +2,13 @@
 
 ## parley-files-viewer 2.0.0 (unreleased)
 
+### Changed (2026-11-16: Java 17, so passwords can be saved to the keychain)
+
+- **The viewer needs Java 17** (was 11). The keychain provider (parley-credentials-keychain, which
+  comes with fsh) is built for Java 17; on Java 11 it was left out, so New Remote Session's dialog
+  had no "Save to keychain" box for an SFTP (or FTP, JDBC) password. Eclipse ran the viewer on
+  Java 11 because the project was Java 11. The Parley libraries stay at Java 11.
+
 ### Removed (2026-11-12: the JavaFX viewer)
 
 - The JavaFX viewer (`us.bringardner.parley.files.viewer.fx`, started by `Launcher`) is no longer
