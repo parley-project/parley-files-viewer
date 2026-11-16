@@ -141,6 +141,7 @@ import us.bringardner.parley.core.SecureBaseObject;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.FileSourceCopy;
 import us.bringardner.parley.files.swing.FileSourceChooserDialog;
+import us.bringardner.parley.files.browse.RecentFile;
 import us.bringardner.parley.files.swing.RecentFileMenu;
 import us.bringardner.parley.files.swing.FactoryPropertiesDialog;
 import us.bringardner.parley.files.FileSourceFactory;
@@ -2617,6 +2618,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			if( file.canWrite()) {
 				tmp.addAll(dirWriteMenus);
 			} 
+			tmp.add(favoriteItemFor(file));
 		}
 		// Expand for an archive, Compress for anything else (not a root: there is nowhere beside it to put the result)
 		if( file.canRead() && file.getParentFile() != null ) {
@@ -2736,6 +2738,55 @@ Panel.font = javax.swing.plaf.FontUIResource
 			historyAt = to;
 			goToFolder(history.get(to));
 		}
+	}
+
+	/** The folders kept in Go > Favorites (shared by every window). */
+	private final Favorites favorites = new Favorites(pref);
+
+	/**
+	 * Go > Favorites: shows a favorite. A folder on this computer, in a window on this computer, is
+	 * shown in the window; any other opens in a new window, as Recent Files does.
+	 */
+	private void openFavorite(RecentFile entry) {
+		try {
+			FileSource dir = recentFiles != null ? recentFiles.openEntry(entry) : entry.open((e, name)->null);
+			if( dir == null ) {
+				return;   // a password wasn't given
+			}
+			if( !dir.isDirectory() ) {
+				MessageDialog.showErrorDialog(entry.getLabel() + " is no longer a folder.", "Favorites");
+			} else if( entry.isLocal() && factory instanceof FileProxyFactory ) {
+				goToFolder(dir);
+			} else {
+				openRecent(dir);
+			}
+		} catch (IOException e) {
+			showError("Can't open " + entry.getLabel(), e);
+		}
+	}
+
+	/** The right-click item that adds a folder to Favorites, or takes it out if it is there. */
+	private JMenuItem favoriteItemFor(FileSource dir) {
+		boolean isFavorite = false;
+		try {
+			isFavorite = favorites.contains(dir);
+		} catch (IOException e) {
+			// offered as an add
+		}
+		final boolean remove = isFavorite;
+		JMenuItem item = new JMenuItem(remove ? "Remove from Favorites" : "Add to Favorites");
+		item.addActionListener(e->{
+			try {
+				if( remove ) {
+					favorites.remove(dir);
+				} else {
+					favorites.add(dir);
+				}
+			} catch (IOException ex) {
+				showError("Can't save the favorites", ex);
+			}
+		});
+		return item;
 	}
 
 	/** Go > Home: your home folder on this computer; on a remote session, the folder it signs in to. */
@@ -3126,7 +3177,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * <li>Edit: Find...
 	 * <li>View: Show Hidden Files, Show File Extensions (the same settings as the toolbar's menu),
 	 * Refresh
-	 * <li>Go: Back, Forward, Up, Home, Recent Files, Go to Folder...
+	 * <li>Go: Back, Forward, Up, Home, Favorites, Recent Files, Go to Folder...
 	 * </ul>
 	 */
 	private void installStandardMenus() {
@@ -3226,6 +3277,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 		go.add(up);
 		go.add(StandardMenus.item("Home", StandardMenus.keys(KeyEvent.VK_H, StandardMenus.SHIFT), this::actionGoHome));
 		go.addSeparator();
+		go.add(new FavoritesMenu(favorites, ()->currentNode == null ? null : currentNode.getDir(),
+				this::openFavorite, e->showError("Can't save the favorites", e)));
 		try {
 			recentFiles = new RecentFileMenu(pref);
 			recentFiles.addActionListener(e->openRecent(e.getSource()));

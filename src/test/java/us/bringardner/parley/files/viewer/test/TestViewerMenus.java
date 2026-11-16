@@ -44,7 +44,7 @@ public class TestViewerMenus {
 			"Set Start Directory...", "-", "Close");
 	public static final List<String> EDIT = List.of("Copy", "Paste", "-", "Rename...", "Delete", "-", "Find...");
 	public static final List<String> VIEW = List.of("Show Hidden Files", "Show File Extensions", "-", "Refresh");
-	public static final List<String> GO = List.of("Back", "Forward", "Up", "Home", "-", "Recent Files", "-", "Go to Folder...");
+	public static final List<String> GO = List.of("Back", "Forward", "Up", "Home", "-", "Favorites", "Recent Files", "-", "Go to Folder...");
 
 	/** A menu's items as the lists above have them, without what StandardMenus adds off macOS. */
 	public static List<String> names(List<String> items, boolean canPrint) {
