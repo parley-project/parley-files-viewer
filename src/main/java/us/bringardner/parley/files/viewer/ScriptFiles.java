@@ -129,16 +129,18 @@ public final class ScriptFiles {
 	}
 
 	/**
-	 * Finds the parley command (the launcher): on the PATH, else where its installer puts it (a
-	 * program started from the desktop often has no /usr/local/bin on its PATH).
+	 * Finds a program the launcher added (parley add NAME makes a command of that name): on the
+	 * PATH, else where the launcher's installer puts its commands (a program started from the
+	 * desktop often has no /usr/local/bin on its PATH).
 	 *
-	 * @return its full path, or null if it isn't installed
+	 * @param program the program's name, such as fshstudio
+	 * @return the command's full path, or null if it isn't installed
 	 */
-	public static String findParley() {
-		return findParley(System.getenv("PATH"), System.getProperty("user.home"));
+	public static String findProgram(String program) {
+		return findProgram(program, System.getenv("PATH"), System.getProperty("user.home"));
 	}
 
-	public static String findParley(String path, String home) {
+	public static String findProgram(String program, String path, String home) {
 		List<String> dirs = new ArrayList<>();
 		if( path != null ) {
 			for(String dir : path.split(File.pathSeparator)) {
@@ -153,7 +155,7 @@ public final class ScriptFiles {
 			dirs.add(new File(home, ".local/bin").getPath());
 		}
 		boolean windows = System.getProperty("os.name", "").toLowerCase(Locale.ROOT).startsWith("windows");
-		String[] names = windows ? new String[] {"parley.cmd", "parley.exe", "parley.bat"} : new String[] {"parley"};
+		String[] names = windows ? new String[] {program + ".cmd", program + ".exe", program + ".bat"} : new String[] {program};
 		for(String dir : dirs) {
 			for(String name : names) {
 				File f = new File(dir, name);
@@ -194,26 +196,28 @@ public final class ScriptFiles {
 		}
 	}
 
-	/** Fsh Studio, offered by Edit With... for a script: started by the parley command. */
-	public static final class StudioApp extends ParleyApp {
-		private final String parley;
+	/** The name the launcher gives Fsh Studio's command (parley add fshstudio). */
+	public static final String STUDIO = "fshstudio";
 
-		/** @param parley the parley command's path (see {@link ScriptFiles#findParley()}) */
-		public StudioApp(String parley) {
-			super("Fsh Studio", "parley:fshstudio");
-			this.parley = parley;
+	/** Fsh Studio, offered by Edit With... for a script: its own command, which opens the script. */
+	public static final class StudioApp extends ParleyApp {
+		private final String command;
+
+		/** @param command the fshstudio command's path (see {@link ScriptFiles#findProgram(String)}) */
+		public StudioApp(String command) {
+			super("Fsh Studio", "parley:" + STUDIO);
+			this.command = command;
 		}
 
 		@Override
 		public String getCommand() {
-			return parley + " fshstudio";
+			return command;
 		}
 
 		@Override
 		public List<String> getCommandLine(String file) {
 			List<String> ret = new ArrayList<>();
-			ret.add(parley);
-			ret.add("fshstudio");
+			ret.add(command);
 			ret.add(file);
 			return ret;
 		}

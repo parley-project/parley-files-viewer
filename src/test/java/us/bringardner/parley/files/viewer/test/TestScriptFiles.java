@@ -32,7 +32,7 @@ import us.bringardner.parley.files.FileSourceFactory;
 import us.bringardner.parley.files.viewer.ScriptFiles;
 
 /**
- * Which files look like shell scripts, where the parley command is found, and what Fsh Studio is
+ * Which files look like shell scripts, where a launcher program is found, and what Fsh Studio is
  * started with.
  */
 public class TestScriptFiles {
@@ -95,21 +95,23 @@ public class TestScriptFiles {
 	}
 
 	@Test
-	public void studioIsStartedByTheParleyCommand() {
-		List<String> command = new ScriptFiles.StudioApp("/usr/local/bin/parley").getCommandLine("/work/a b.fsh");
-		assertEquals(List.of("/usr/local/bin/parley", "fshstudio", "/work/a b.fsh"), command);
+	public void studioIsStartedByItsOwnCommand() {
+		List<String> command = new ScriptFiles.StudioApp("/usr/local/bin/fshstudio").getCommandLine("/work/a b.fsh");
+		assertEquals(List.of("/usr/local/bin/fshstudio", "/work/a b.fsh"), command);
 	}
 
 	@Test
-	public void parleyIsFoundOnThePath() throws Exception {
+	public void aProgramIsFoundOnThePath() throws Exception {
 		if( System.getProperty("os.name", "").toLowerCase().startsWith("windows") ) {
 			return;
 		}
 		File bin = new File(tmp, "bin");
 		assertTrue(bin.mkdirs());
-		File parley = new File(bin, "parley");
-		Files.write(parley.toPath(), "#!/bin/sh\n".getBytes(StandardCharsets.UTF_8));
-		assertTrue(parley.setExecutable(true));
-		assertEquals(parley.getAbsolutePath(), ScriptFiles.findParley(bin.getAbsolutePath(), tmp.getAbsolutePath()));
+		File studio = new File(bin, "fshstudio");
+		Files.write(studio.toPath(), "#!/bin/sh\n".getBytes(StandardCharsets.UTF_8));
+		assertTrue(studio.setExecutable(true));
+		assertEquals(studio.getAbsolutePath(), ScriptFiles.findProgram("fshstudio", bin.getAbsolutePath(), tmp.getAbsolutePath()));
+		// a command that isn't there isn't found (a machine with one in /usr/local/bin has a real one)
+		assertFalse(ScriptFiles.findProgram("no-such-parley-program", bin.getAbsolutePath(), tmp.getAbsolutePath()) != null);
 	}
 }
