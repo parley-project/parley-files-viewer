@@ -1648,6 +1648,15 @@ Panel.font = javax.swing.plaf.FontUIResource
 	}
 
 	public void edit(FileSource file) {
+		// an fsh script is edited in Fsh Studio, where it is added
+		if( ScriptFiles.isFshScript(file) ) {
+			String studio = ScriptFiles.findStudio();
+			if( studio != null ) {
+				ScriptFiles.StudioApp app = new ScriptFiles.StudioApp(studio);
+				launchWith(file, app, app.path);
+				return;
+			}
+		}
 		if (file instanceof FileProxy) {
 			File local = ((FileProxy) file).getTarget();								
 			try {
@@ -2174,6 +2183,18 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 		}
 
+		launchWith(f, chosen, exe);
+	}
+
+	/**
+	 * Opens a file with an application: fsh runs a script in a terminal window; another is started on
+	 * the file (a file on another machine goes to it as a copy that is downloaded, and what it
+	 * changes is offered to be sent back when it ends, as Edit does).
+	 *
+	 * @param chosen the application, or null for a program the user typed
+	 * @param exe the application's path
+	 */
+	private void launchWith(FileSource f, RegData chosen, String exe) {
 		if( chosen instanceof ScriptFiles.FshApp ) {
 			runInFsh(f);
 			return;
@@ -4167,6 +4188,11 @@ Panel.font = javax.swing.plaf.FontUIResource
 	}
 
 	public void open(FileSource file) {
+		// an fsh script on this computer is run by fsh
+		if( file instanceof FileProxy && ScriptFiles.isFshScript(file) ) {
+			runInFsh(file);
+			return;
+		}
 		if (file instanceof FileProxy) {
 			File local = ((FileProxy) file).getTarget();								
 			try {
