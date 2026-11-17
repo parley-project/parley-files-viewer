@@ -82,7 +82,8 @@ public final class ScriptFiles {
 	 *         (#!/usr/bin/env bash)
 	 */
 	public static boolean isShellShebang(String line) {
-		return SHELLS.contains(shebangProgram(line));
+		String program = shebangProgram(line);
+		return program != null && SHELLS.contains(program);
 	}
 
 	/** @return true if the line is a #! line for fsh itself (#!/usr/local/bin/fsh, #!/usr/bin/env fsh) */
