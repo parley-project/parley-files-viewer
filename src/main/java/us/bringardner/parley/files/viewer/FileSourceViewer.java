@@ -2199,8 +2199,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 	/**
 	 * For a file that looks like a shell script, the Parley programs that suit the kind of
-	 * request: fsh to open a script on this computer, Fsh Studio to edit one (where the parley
-	 * command that starts it is installed). They come first in the list.
+	 * request: fsh to open a script on this computer, Fsh Studio to edit one (where its command,
+	 * fshstudio, is installed). They come first in the list.
 	 */
 	private List<RegData> withScriptApps(FileSource f, CommandType type, List<RegData> found) {
 		List<RegData> ret = found == null ? new ArrayList<>() : new ArrayList<>(found);
@@ -2209,9 +2209,9 @@ Panel.font = javax.swing.plaf.FontUIResource
 				ret.add(0, new ScriptFiles.FshApp());
 			}
 			if( type == CommandType.Editor ) {
-				String parley = ScriptFiles.findParley();
-				if( parley != null ) {
-					ret.add(0, new ScriptFiles.StudioApp(parley));
+				String studio = ScriptFiles.findProgram(ScriptFiles.STUDIO);
+				if( studio != null ) {
+					ret.add(0, new ScriptFiles.StudioApp(studio));
 				}
 			}
 		}
