@@ -25,6 +25,7 @@
  */
 package us.bringardner.parley.files.viewer;
 
+import java.awt.Image;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +41,9 @@ import java.util.Properties;
 import java.util.Set;
 
 import javax.swing.Icon;
+import javax.swing.ImageIcon;
 
+import us.bringardner.parley.brand.ParleyBrand;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.fileproxy.FileProxy;
 import us.bringardner.parley.files.viewer.IRegistry.RegData;
@@ -79,12 +82,22 @@ public final class ScriptFiles {
 	 *         (#!/usr/bin/env bash)
 	 */
 	public static boolean isShellShebang(String line) {
+		return SHELLS.contains(shebangProgram(line));
+	}
+
+	/** @return true if the line is a #! line for fsh itself (#!/usr/local/bin/fsh, #!/usr/bin/env fsh) */
+	public static boolean isFshShebang(String line) {
+		return "fsh".equals(shebangProgram(line));
+	}
+
+	/** @return the program a #! line starts, looking through env, or null if it isn't a #! line */
+	private static String shebangProgram(String line) {
 		if( line == null || !line.startsWith("#!") ) {
-			return false;
+			return null;
 		}
 		String[] words = line.substring(2).trim().split("\\s+");
 		if( words.length == 0 || words[0].isEmpty() ) {
-			return false;
+			return null;
 		}
 		String program = baseName(words[0]);
 		if( program.equals("env") ) {
@@ -96,7 +109,7 @@ public final class ScriptFiles {
 				}
 			}
 		}
-		return SHELLS.contains(program);
+		return program;
 	}
 
 	private static String baseName(String path) {
@@ -114,22 +127,41 @@ public final class ScriptFiles {
 		if( isScriptName(file.getName()) ) {
 			return true;
 		}
-		if( !(file instanceof FileProxy) ) {
+		return isShellShebang(firstLine(file));
+	}
+
+	/**
+	 * @return true if the file is an fsh script: its name ends .fsh, or (for a file on this
+	 *         computer) its first line is a #! line for fsh. Other shell scripts are not: they
+	 *         may be written for bash.
+	 */
+	public static boolean isFshScript(FileSource file) {
+		if( file == null ) {
 			return false;
+		}
+		if( file.getName().toLowerCase(Locale.ROOT).endsWith(".fsh") ) {
+			return true;
+		}
+		return isFshShebang(firstLine(file));
+	}
+
+	/** @return the first line of a file on this computer, or null (not a local file, not a file, or unreadable) */
+	private static String firstLine(FileSource file) {
+		if( !(file instanceof FileProxy) ) {
+			return null;
 		}
 		try {
 			if( !file.isFile() ) {
-				return false;
+				return null;
 			}
 			try (InputStream in = file.getInputStream()) {
 				byte[] buf = in.readNBytes(FIRST_LINE_BYTES);
 				String text = new String(buf, StandardCharsets.ISO_8859_1);
 				int end = text.indexOf('\n');
-				String line = end < 0 ? text : text.substring(0, end);
-				return isShellShebang(line.trim());
+				return (end < 0 ? text : text.substring(0, end)).trim();
 			}
 		} catch (IOException e) {
-			return false;
+			return null;
 		}
 	}
 
@@ -183,9 +215,11 @@ public final class ScriptFiles {
 			return new ArrayList<>();
 		}
 
+		/** The Parley icon with the terminal badge, as these programs' own windows have it. */
 		@Override
 		public Icon getIcon(int width, int height) throws IOException {
-			return null;
+			Image image = ParleyBrand.icon(Math.max(width, height), "terminal");
+			return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));
 		}
 	}
 

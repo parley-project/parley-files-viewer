@@ -17,6 +17,7 @@ package us.bringardner.parley.files.viewer.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -80,6 +81,26 @@ public class TestScriptFiles {
 		assertFalse(ScriptFiles.looksLikeScript(local("readme", "echo not a script\n")));
 		assertTrue(ScriptFiles.looksLikeScript(local("plain.fsh", "no first line needed")));
 		assertFalse(ScriptFiles.looksLikeScript(null));
+	}
+
+	@Test
+	public void onlyFshScriptsAreRunAndEditedByDefault() throws Exception {
+		assertTrue(ScriptFiles.isFshShebang("#!/usr/local/bin/fsh"));
+		assertTrue(ScriptFiles.isFshShebang("#!/usr/bin/env fsh"));
+		assertFalse(ScriptFiles.isFshShebang("#!/bin/bash"));
+		assertFalse(ScriptFiles.isFshShebang("echo fsh"));
+		assertTrue(ScriptFiles.isFshScript(local("tool.fsh", "echo hi\n")));
+		assertTrue(ScriptFiles.isFshScript(local("runme", "#!/usr/bin/env fsh\necho hi\n")));
+		// a shell script for another shell keeps the system's defaults
+		assertFalse(ScriptFiles.isFshScript(local("legacy.sh", "#!/bin/bash\necho hi\n")));
+		assertFalse(ScriptFiles.isFshScript(local("other", "#!/bin/bash\n")));
+		assertFalse(ScriptFiles.isFshScript(null));
+	}
+
+	@Test
+	public void theProgramsHaveTheParleyIcon() throws Exception {
+		assertNotNull(new ScriptFiles.FshApp().getIcon(16, 16));
+		assertEquals(16, new ScriptFiles.StudioApp("/usr/local/bin/parley-fsh-studio").getIcon(16, 16).getIconWidth());
 	}
 
 	@Test
