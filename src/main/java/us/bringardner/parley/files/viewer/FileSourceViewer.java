@@ -2153,6 +2153,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			// no editors registered as such: any application that opens it
 			list = reg.getRegisteredHandler(f.getName(), CommandType.Any);
 		}
+		list = withScriptApps(f, type, list);
 		if( list == null || list.size()==0) {
 			MessageDialog.showMessageDialog("No application availible to open "+f, "");
 			return;
@@ -2173,6 +2174,11 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 		}
 
+		if( chosen instanceof ScriptFiles.FshApp ) {
+			runInFsh(f);
+			return;
+		}
+
 		if( f instanceof FileProxy ) {
 			executeExternal(exe,chosen,f);
 		} else {
@@ -2189,6 +2195,97 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 		}
 
+	}
+
+	/**
+	 * For a file that looks like a shell script, the Parley programs that suit the kind of
+	 * request: fsh to open a script on this computer, Fsh Studio to edit one (where the parley
+	 * command that starts it is installed). They come first in the list.
+	 */
+	private List<RegData> withScriptApps(FileSource f, CommandType type, List<RegData> found) {
+		List<RegData> ret = found == null ? new ArrayList<>() : new ArrayList<>(found);
+		if( ScriptFiles.looksLikeScript(f) ) {
+			if( type == CommandType.Any && f instanceof FileProxy ) {
+				ret.add(0, new ScriptFiles.FshApp());
+			}
+			if( type == CommandType.Editor ) {
+				String parley = ScriptFiles.findParley();
+				if( parley != null ) {
+					ret.add(0, new ScriptFiles.StudioApp(parley));
+				}
+			}
+		}
+		return ret;
+	}
+
+	/**
+	 * Open With > fsh: a terminal window in the script's folder that runs the script, in a
+	 * subshell so an exit in the script ends the script and leaves the window (and its output).
+	 */
+	private void runInFsh(FileSource script) {
+		// "exit" in the terminal must close the terminal, not end the viewer's JVM
+		Console.exitJvm = false;
+		Console console = new Console();
+		try {
+			FileSource dir = script.getParentFile();
+			if( dir != null ) {
+				console.startIn(dir);
+			}
+			us.bringardner.fsh.KeyboardReader window = console.getKeyboadReader(true);
+			String line = "( . " + ScriptFiles.shellQuote(script.getAbsolutePath()) + " )";
+			console.setKeyboardReader(new FirstLineReader(window, line));
+			console.start();
+		} catch (IOException e) {
+			showError("Can't run " + script.getName() + " in fsh", e);
+		}
+	}
+
+	/** A terminal window's keyboard that types one line first, then leaves the typing to the person. */
+	private static final class FirstLineReader implements us.bringardner.fsh.KeyboardReader {
+		private final us.bringardner.fsh.KeyboardReader window;
+		private String first;
+
+		FirstLineReader(us.bringardner.fsh.KeyboardReader window, String first) {
+			this.window = window;
+			this.first = first;
+		}
+
+		@Override
+		public String readLine(Console console) throws IOException {
+			if( first != null ) {
+				String line = first;
+				first = null;
+				// (shown, as if typed)
+				window.getStdOut().println(line);
+				return line;
+			}
+			return window.readLine(console);
+		}
+
+		@Override
+		public void setPrompt(String prompt) {
+			window.setPrompt(prompt);
+		}
+
+		@Override
+		public void setEditLineText(String text) {
+			window.setEditLineText(text);
+		}
+
+		@Override
+		public java.io.PrintStream getStdErr() {
+			return window.getStdErr();
+		}
+
+		@Override
+		public java.io.PrintStream getStdOut() {
+			return window.getStdOut();
+		}
+
+		@Override
+		public java.io.InputStream getStdIn() {
+			return window.getStdIn();
+		}
 	}
 
 	private void executeExternal(String exe, RegData handler, FileSource f) {
