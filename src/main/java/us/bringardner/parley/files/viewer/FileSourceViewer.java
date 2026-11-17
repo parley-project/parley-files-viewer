@@ -95,6 +95,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import us.bringardner.swing.menu.StandardMenus;
 import javax.swing.JMenuItem;
@@ -140,6 +141,7 @@ import us.bringardner.parley.core.SecureBaseObject;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.FileSourceCopy;
 import us.bringardner.parley.files.swing.FileSourceChooserDialog;
+import us.bringardner.parley.files.browse.RecentFile;
 import us.bringardner.parley.files.swing.RecentFileMenu;
 import us.bringardner.parley.files.swing.FactoryPropertiesDialog;
 import us.bringardner.parley.files.FileSourceFactory;
@@ -1646,6 +1648,15 @@ Panel.font = javax.swing.plaf.FontUIResource
 	}
 
 	public void edit(FileSource file) {
+		// an fsh script is edited in Fsh Studio, where it is added
+		if( ScriptFiles.isFshScript(file) ) {
+			String studio = ScriptFiles.findStudio();
+			if( studio != null ) {
+				ScriptFiles.StudioApp app = new ScriptFiles.StudioApp(studio);
+				launchWith(file, app, app.path);
+				return;
+			}
+		}
 		if (file instanceof FileProxy) {
 			File local = ((FileProxy) file).getTarget();								
 			try {
@@ -2151,6 +2162,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			// no editors registered as such: any application that opens it
 			list = reg.getRegisteredHandler(f.getName(), CommandType.Any);
 		}
+		list = withScriptApps(f, type, list);
 		if( list == null || list.size()==0) {
 			MessageDialog.showMessageDialog("No application availible to open "+f, "");
 			return;
@@ -2171,6 +2183,23 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 		}
 
+		launchWith(f, chosen, exe);
+	}
+
+	/**
+	 * Opens a file with an application: fsh runs a script in a terminal window; another is started on
+	 * the file (a file on another machine goes to it as a copy that is downloaded, and what it
+	 * changes is offered to be sent back when it ends, as Edit does).
+	 *
+	 * @param chosen the application, or null for a program the user typed
+	 * @param exe the application's path
+	 */
+	private void launchWith(FileSource f, RegData chosen, String exe) {
+		if( chosen instanceof ScriptFiles.FshApp ) {
+			runInFsh(f);
+			return;
+		}
+
 		if( f instanceof FileProxy ) {
 			executeExternal(exe,chosen,f);
 		} else {
@@ -2187,6 +2216,110 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 		}
 
+	}
+
+	/**
+	 * For a file that looks like a shell script, the Parley programs that suit the kind of
+	 * request: fsh to open a script on this computer, Fsh Studio to edit one (where its command,
+	 * fshstudio, is installed). They come first in the list.
+	 */
+	private List<RegData> withScriptApps(FileSource f, CommandType type, List<RegData> found) {
+		List<RegData> ret = found == null ? new ArrayList<>() : new ArrayList<>(found);
+		if( ScriptFiles.looksLikeScript(f) ) {
+			if( type == CommandType.Any && f instanceof FileProxy ) {
+				ret.add(0, new ScriptFiles.FshApp());
+			}
+			if( type == CommandType.Editor ) {
+				String studio = ScriptFiles.findStudio();
+				if( studio != null ) {
+					ret.add(0, new ScriptFiles.StudioApp(studio));
+				}
+			}
+		}
+		return ret;
+	}
+
+	/**
+	 * Open With > fsh: a terminal window in the script's folder that runs the script, in a
+	 * subshell so an exit in the script ends the script and not the shell. When it ends the window
+	 * stays, with its output and the script's exit status, and reads no more commands.
+	 */
+	private void runInFsh(FileSource script) {
+		// "exit" in the terminal must close the terminal, not end the viewer's JVM
+		Console.exitJvm = false;
+		Console console = new Console();
+		try {
+			FileSource dir = script.getParentFile();
+			if( dir != null ) {
+				console.startIn(dir);
+			}
+			us.bringardner.fsh.KeyboardReader window = console.getKeyboadReader(true);
+			if( window instanceof java.awt.Window ) {
+				// the Parley icon with the terminal badge, as fsh's own windows have it (not the viewer's folder)
+				((java.awt.Window) window).setIconImages(ParleyBrand.appIcons("terminal"));
+			}
+			String line = "( . " + ScriptFiles.shellQuote(script.getAbsolutePath()) + " )";
+			console.setKeyboardReader(new RunOneLineReader(window, line, script.getName()));
+			console.start();
+		} catch (IOException e) {
+			showError("Can't run " + script.getName() + " in fsh", e);
+		}
+	}
+
+	/**
+	 * A terminal window's keyboard that types one line (and shows it, as if typed) and then ends
+	 * the input: the shell leaves when the line is done, but the window, which only the shell's
+	 * own end would close, stays for the person to read and close.
+	 */
+	private static final class RunOneLineReader implements us.bringardner.fsh.KeyboardReader {
+		private final us.bringardner.fsh.KeyboardReader window;
+		private final String line;
+		private final String name;
+		private boolean typed;
+
+		RunOneLineReader(us.bringardner.fsh.KeyboardReader window, String line, String name) {
+			this.window = window;
+			this.line = line;
+			this.name = name;
+		}
+
+		@Override
+		public String readLine(Console console) throws IOException {
+			if( !typed ) {
+				typed = true;
+				window.getStdOut().println("$ " + line);
+				return line;
+			}
+			window.getStdOut().println();
+			window.getStdOut().println("[" + name + " ended with exit status " + console.getLastExitCode()
+					+ ". Close this window when you are done.]");
+			// the end of the input: the shell leaves
+			return null;
+		}
+
+		@Override
+		public void setPrompt(String prompt) {
+			// (no prompt: nothing more is typed)
+		}
+
+		@Override
+		public void setEditLineText(String text) {
+		}
+
+		@Override
+		public java.io.PrintStream getStdErr() {
+			return window.getStdErr();
+		}
+
+		@Override
+		public java.io.PrintStream getStdOut() {
+			return window.getStdOut();
+		}
+
+		@Override
+		public java.io.InputStream getStdIn() {
+			return window.getStdIn();
+		}
 	}
 
 	private void executeExternal(String exe, RegData handler, FileSource f) {
@@ -2470,6 +2603,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 								setTitle(e.getMessage());
 							}
 							setStatus(currentDir);
+							recordVisit(currentDir);
 
 						}						
 					}
@@ -2615,6 +2749,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			if( file.canWrite()) {
 				tmp.addAll(dirWriteMenus);
 			} 
+			tmp.add(favoriteItemFor(file));
 		}
 		// Expand for an archive, Compress for anything else (not a root: there is nowhere beside it to put the result)
 		if( file.canRead() && file.getParentFile() != null ) {
@@ -2669,16 +2804,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			public void actionPerformed(ActionEvent e) {
 				Object obj = e.getSource();
 				if (obj != null && obj instanceof FileSource) {
-					FileSource f = (FileSource) obj;
-					findInTree(f, path->{
-						if( path != null ) {
-							FileSourceTreeNode lastNode = (FileSourceTreeNode) path.getLastPathComponent();
-							FileSourceTreeLoadingWorking worker = new FileSourceTreeLoadingWorking(lastNode, path, getTree());
-							worker.execute();
-						}
-					});
-
-
+					goToFolder((FileSource) obj);
 				}				
 			}
 		};
@@ -2699,6 +2825,141 @@ Panel.font = javax.swing.plaf.FontUIResource
 		status.add(new FileComboBoxPanel(dir,goTo));
 		status.updateUI();
 
+	}
+
+	/** Shows a folder: finds it in the tree, selects it and loads it. */
+	private void goToFolder(FileSource f) {
+		findInTree(f, path->{
+			if( path != null ) {
+				FileSourceTreeNode lastNode = (FileSourceTreeNode) path.getLastPathComponent();
+				FileSourceTreeLoadingWorking worker = new FileSourceTreeLoadingWorking(lastNode, path, getTree());
+				worker.execute();
+			}
+		});
+	}
+
+	/** The folders this window has shown, oldest first, and which of them is shown now. */
+	private final List<FileSource> history = new ArrayList<>();
+	private int historyAt = -1;
+	private static final int HISTORY_SIZE = 100;
+
+	/**
+	 * Notes that a folder is shown. Going back or forward has already moved historyAt to the
+	 * folder, so arriving there changes nothing; any other folder drops what was ahead of the
+	 * one shown and goes on the end.
+	 */
+	private void recordVisit(FileSource dir) {
+		if( dir == null || (historyAt >= 0 && dir.equals(history.get(historyAt))) ) {
+			return;
+		}
+		while( history.size() > historyAt + 1 ) {
+			history.remove(history.size() - 1);
+		}
+		history.add(dir);
+		if( history.size() > HISTORY_SIZE ) {
+			history.remove(0);
+		}
+		historyAt = history.size() - 1;
+	}
+
+	/** Go > Back (by) steps: the folder shown before (negative) or after (positive) this one. */
+	private void goInHistory(int by) {
+		int to = historyAt + by;
+		if( to >= 0 && to < history.size() ) {
+			historyAt = to;
+			goToFolder(history.get(to));
+		}
+	}
+
+	/** The folders kept in Go > Favorites (shared by every window). */
+	private final Favorites favorites = new Favorites(pref);
+
+	/**
+	 * Go > Favorites: shows a favorite. A folder on this computer, in a window on this computer, is
+	 * shown in the window; any other opens in a new window, as Recent Files does.
+	 */
+	private void openFavorite(RecentFile entry) {
+		try {
+			FileSource dir = recentFiles != null ? recentFiles.openEntry(entry) : entry.open((e, name)->null);
+			if( dir == null ) {
+				return;   // a password wasn't given
+			}
+			if( !dir.isDirectory() ) {
+				MessageDialog.showErrorDialog(entry.getLabel() + " is no longer a folder.", "Favorites");
+			} else if( entry.isLocal() && factory instanceof FileProxyFactory ) {
+				goToFolder(dir);
+			} else {
+				openRecent(dir);
+			}
+		} catch (IOException e) {
+			showError("Can't open " + entry.getLabel(), e);
+		}
+	}
+
+	/** The right-click item that adds a folder to Favorites, or takes it out if it is there. */
+	private JMenuItem favoriteItemFor(FileSource dir) {
+		boolean isFavorite = false;
+		try {
+			isFavorite = favorites.contains(dir);
+		} catch (IOException e) {
+			// offered as an add
+		}
+		final boolean remove = isFavorite;
+		JMenuItem item = new JMenuItem(remove ? "Remove from Favorites" : "Add to Favorites");
+		item.addActionListener(e->{
+			try {
+				if( remove ) {
+					favorites.remove(dir);
+				} else {
+					favorites.add(dir);
+				}
+			} catch (IOException ex) {
+				showError("Can't save the favorites", ex);
+			}
+		});
+		return item;
+	}
+
+	/** Go > Home: your home folder on this computer; on a remote session, the folder it signs in to. */
+	private void actionGoHome() {
+		try {
+			FileSource home = factory instanceof FileProxyFactory
+					? factory.createFileSource(System.getProperty("user.home"))
+					: factory.getCurrentDirectory();
+			if( home != null ) {
+				goToFolder(home);
+			}
+		} catch (IOException e) {
+			showError("Can't go to the home folder", e);
+		}
+	}
+
+	/** Go > Go to Folder...: asks for a path and shows that folder. */
+	private void actionGoToFolder() {
+		String start = currentNode == null || currentNode.getDir() == null ? "" : currentNode.getDir().getAbsolutePath();
+		String path = MessageDialog.showInputDialog("Type the folder to go to", "Go to Folder", start);
+		if( path == null || path.trim().isEmpty() ) {
+			return;
+		}
+		try {
+			FileSource dir = factory.createFileSource(path.trim());
+			if( dir != null && dir.isDirectory() ) {
+				goToFolder(dir);
+			} else {
+				MessageDialog.showErrorDialog("Not a folder: " + path.trim(), "Go to Folder");
+			}
+		} catch (IOException e) {
+			showError("Can't go to " + path.trim(), e);
+		}
+	}
+
+	/** The folder that holds the one shown, or null at the top. */
+	private FileSource enclosingFolder() {
+		try {
+			return currentNode == null || currentNode.getDir() == null ? null : currentNode.getDir().getParentFile();
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 	public static TreePath getPath(TreeNode treeNode) {
@@ -3047,6 +3308,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 	 * <li>Edit: Find...
 	 * <li>View: Show Hidden Files, Show File Extensions (the same settings as the toolbar's menu),
 	 * Refresh
+	 * <li>Go: Back, Forward, Up, Home, Favorites, Recent Files, Go to Folder...
 	 * </ul>
 	 */
 	private void installStandardMenus() {
@@ -3075,13 +3337,6 @@ Panel.font = javax.swing.plaf.FontUIResource
 		menus.file.add(StandardMenus.item("Edit With...", ()->forSelectedFiles(false, this::editWith)));
 		if( Printing.isAvailable() ) {
 			menus.file.add(StandardMenus.item("Print", ()->forSelectedFiles(false, this::print)));
-		}
-		try {
-			recentFiles = new RecentFileMenu(pref);
-			recentFiles.addActionListener(e->openRecent(e.getSource()));
-			menus.file.add(recentFiles);
-		} catch (IOException e) {
-			// the menu is a convenience: the viewer works without it
 		}
 		menus.file.addSeparator();
 		menus.file.add(StandardMenus.item("Start Here Next Time", this::startHereNextTime));
@@ -3138,7 +3393,45 @@ Panel.font = javax.swing.plaf.FontUIResource
 		menus.view.addSeparator();
 		menus.view.add(StandardMenus.item("Refresh", KeyEvent.VK_R, this::refreshAll));
 
-		menus.install(getFrame());
+		// Go: where to go from here, as in Finder
+		JMenu go = new JMenu("Go");
+		JMenuItem up = StandardMenus.item("Up", StandardMenus.keys(KeyEvent.VK_UP, 0), ()->{
+			FileSource above = enclosingFolder();
+			if( above != null ) {
+				goToFolder(above);
+			}
+		});
+		JMenuItem back = StandardMenus.item("Back", StandardMenus.keys(KeyEvent.VK_OPEN_BRACKET, 0), ()->goInHistory(-1));
+		JMenuItem forward = StandardMenus.item("Forward", StandardMenus.keys(KeyEvent.VK_CLOSE_BRACKET, 0), ()->goInHistory(1));
+		go.add(back);
+		go.add(forward);
+		go.add(up);
+		go.add(StandardMenus.item("Home", StandardMenus.keys(KeyEvent.VK_H, StandardMenus.SHIFT), this::actionGoHome));
+		go.addSeparator();
+		go.add(new FavoritesMenu(favorites, ()->currentNode == null ? null : currentNode.getDir(),
+				this::openFavorite, e->showError("Can't save the favorites", e)));
+		try {
+			recentFiles = new RecentFileMenu(pref);
+			recentFiles.addActionListener(e->openRecent(e.getSource()));
+			go.add(recentFiles);
+		} catch (IOException e) {
+			// the menu is a convenience: the viewer works without it
+		}
+		go.addSeparator();
+		go.add(StandardMenus.item("Go to Folder...", StandardMenus.keys(KeyEvent.VK_G, StandardMenus.SHIFT), this::actionGoToFolder));
+		go.addMenuListener(new javax.swing.event.MenuListener() {
+			public void menuSelected(javax.swing.event.MenuEvent e) {
+				back.setEnabled(historyAt > 0);
+				forward.setEnabled(historyAt >= 0 && historyAt < history.size() - 1);
+				up.setEnabled(enclosingFolder() != null);
+			}
+			public void menuDeselected(javax.swing.event.MenuEvent e) {
+			}
+			public void menuCanceled(javax.swing.event.MenuEvent e) {
+			}
+		});
+
+		menus.install(getFrame(), go);
 	}
 
 	private RecentFileMenu recentFiles;
@@ -3899,6 +4192,11 @@ Panel.font = javax.swing.plaf.FontUIResource
 	}
 
 	public void open(FileSource file) {
+		// an fsh script on this computer is run by fsh
+		if( file instanceof FileProxy && ScriptFiles.isFshScript(file) ) {
+			runInFsh(file);
+			return;
+		}
 		if (file instanceof FileProxy) {
 			File local = ((FileProxy) file).getTarget();								
 			try {
