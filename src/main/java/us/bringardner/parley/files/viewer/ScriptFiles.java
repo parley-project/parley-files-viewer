@@ -29,9 +29,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.swing.Icon;
@@ -196,8 +201,67 @@ public final class ScriptFiles {
 		}
 	}
 
-	/** The name the launcher gives Fsh Studio's command (parley add fshstudio). */
+	/** The name the launcher knows Fsh Studio by (parley add fshstudio), unless it was added under another. */
 	public static final String STUDIO = "fshstudio";
+	/** Fsh Studio's artifact, which names its app file whatever the command is called. */
+	private static final String STUDIO_ARTIFACT = "parley-fsh-studio";
+
+	/**
+	 * Finds Fsh Studio's command. The launcher keeps each program it added as an app file
+	 * (PREFIX/apps/NAME.properties, which names the artifact) with a command of that name, so the
+	 * app file of Fsh Studio's artifact gives the command's name even if the program was added under
+	 * another; without the launcher's files, the usual name.
+	 *
+	 * @return the command's full path, or null if Fsh Studio isn't added
+	 */
+	public static String findStudio() {
+		String path = System.getenv("PATH");
+		String home = System.getProperty("user.home");
+		String parley = findProgram("parley", path, home);
+		String name = STUDIO;
+		if( parley != null ) {
+			try {
+				Path prefix = Paths.get(parley).toRealPath().getParent().getParent();
+				String found = programNamed(STUDIO_ARTIFACT, prefix.resolve("apps"));
+				if( found != null ) {
+					name = found;
+				}
+				// (the commands the launcher makes are in its own bin folder too)
+				path = (path == null ? "" : path + File.pathSeparator) + prefix.resolve("bin");
+			} catch (IOException | RuntimeException e) {
+				// (not an installation we can read: the usual name, on the usual paths)
+			}
+		}
+		return findProgram(name, path, home);
+	}
+
+	/**
+	 * @param artifact an artifact's id, such as parley-fsh-studio
+	 * @param apps the launcher's folder of app files (NAME.properties, holding artifact=group:artifact:version)
+	 * @return the name of the program added for that artifact, or null
+	 */
+	public static String programNamed(String artifact, Path apps) {
+		if( !Files.isDirectory(apps) ) {
+			return null;
+		}
+		try (DirectoryStream<Path> files = Files.newDirectoryStream(apps, "*.properties")) {
+			for(Path file : files) {
+				Properties props = new Properties();
+				try (InputStream in = Files.newInputStream(file)) {
+					props.load(in);
+				}
+				for(String part : props.getProperty("artifact", "").trim().split(":")) {
+					if( part.equals(artifact) ) {
+						String fileName = file.getFileName().toString();
+						return fileName.substring(0, fileName.length() - ".properties".length());
+					}
+				}
+			}
+		} catch (IOException e) {
+			// (an app file that can't be read: no program)
+		}
+		return null;
+	}
 
 	/** Fsh Studio, offered by Edit With... for a script: its own command, which opens the script. */
 	public static final class StudioApp extends ParleyApp {

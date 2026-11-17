@@ -2209,7 +2209,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 				ret.add(0, new ScriptFiles.FshApp());
 			}
 			if( type == CommandType.Editor ) {
-				String studio = ScriptFiles.findProgram(ScriptFiles.STUDIO);
+				String studio = ScriptFiles.findStudio();
 				if( studio != null ) {
 					ret.add(0, new ScriptFiles.StudioApp(studio));
 				}

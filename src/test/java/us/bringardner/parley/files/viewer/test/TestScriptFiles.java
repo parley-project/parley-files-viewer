@@ -17,6 +17,7 @@ package us.bringardner.parley.files.viewer.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -98,6 +99,17 @@ public class TestScriptFiles {
 	public void studioIsStartedByItsOwnCommand() {
 		List<String> command = new ScriptFiles.StudioApp("/usr/local/bin/fshstudio").getCommandLine("/work/a b.fsh");
 		assertEquals(List.of("/usr/local/bin/fshstudio", "/work/a b.fsh"), command);
+	}
+
+	@Test
+	public void aProgramAddedUnderAnotherNameIsFoundByItsArtifact() throws Exception {
+		File apps = new File(tmp, "apps");
+		assertTrue(apps.mkdirs());
+		Files.write(new File(apps, "fsh.properties").toPath(), "artifact=us.bringardner:parley-fsh:2.0.0\n".getBytes(StandardCharsets.UTF_8));
+		assertNull(ScriptFiles.programNamed("parley-fsh-studio", apps.toPath()));
+		Files.write(new File(apps, "fshide.properties").toPath(), "# runs\nartifact=us.bringardner:parley-fsh-studio:2.0.0-SNAPSHOT\n".getBytes(StandardCharsets.UTF_8));
+		assertEquals("fshide", ScriptFiles.programNamed("parley-fsh-studio", apps.toPath()));
+		assertNull(ScriptFiles.programNamed("parley-fsh-studio", new File(tmp, "no-apps").toPath()));
 	}
 
 	@Test
