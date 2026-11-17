@@ -2254,6 +2254,10 @@ Panel.font = javax.swing.plaf.FontUIResource
 				console.startIn(dir);
 			}
 			us.bringardner.fsh.KeyboardReader window = console.getKeyboadReader(true);
+			if( window instanceof java.awt.Window ) {
+				// the Parley icon with the terminal badge, as fsh's own windows have it (not the viewer's folder)
+				((java.awt.Window) window).setIconImages(ParleyBrand.appIcons("terminal"));
+			}
 			String line = "( . " + ScriptFiles.shellQuote(script.getAbsolutePath()) + " )";
 			console.setKeyboardReader(new RunOneLineReader(window, line, script.getName()));
 			console.start();
