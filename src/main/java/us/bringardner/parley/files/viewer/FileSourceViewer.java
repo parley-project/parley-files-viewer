@@ -2220,7 +2220,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 	/**
 	 * Open With > fsh: a terminal window in the script's folder that runs the script, in a
-	 * subshell so an exit in the script ends the script and leaves the window (and its output).
+	 * subshell so an exit in the script ends the script and not the shell. When it ends the window
+	 * stays, with its output and the script's exit status, and reads no more commands.
 	 */
 	private void runInFsh(FileSource script) {
 		// "exit" in the terminal must close the terminal, not end the viewer's JVM
@@ -2233,43 +2234,51 @@ Panel.font = javax.swing.plaf.FontUIResource
 			}
 			us.bringardner.fsh.KeyboardReader window = console.getKeyboadReader(true);
 			String line = "( . " + ScriptFiles.shellQuote(script.getAbsolutePath()) + " )";
-			console.setKeyboardReader(new FirstLineReader(window, line));
+			console.setKeyboardReader(new RunOneLineReader(window, line, script.getName()));
 			console.start();
 		} catch (IOException e) {
 			showError("Can't run " + script.getName() + " in fsh", e);
 		}
 	}
 
-	/** A terminal window's keyboard that types one line first, then leaves the typing to the person. */
-	private static final class FirstLineReader implements us.bringardner.fsh.KeyboardReader {
+	/**
+	 * A terminal window's keyboard that types one line (and shows it, as if typed) and then ends
+	 * the input: the shell leaves when the line is done, but the window, which only the shell's
+	 * own end would close, stays for the person to read and close.
+	 */
+	private static final class RunOneLineReader implements us.bringardner.fsh.KeyboardReader {
 		private final us.bringardner.fsh.KeyboardReader window;
-		private String first;
+		private final String line;
+		private final String name;
+		private boolean typed;
 
-		FirstLineReader(us.bringardner.fsh.KeyboardReader window, String first) {
+		RunOneLineReader(us.bringardner.fsh.KeyboardReader window, String line, String name) {
 			this.window = window;
-			this.first = first;
+			this.line = line;
+			this.name = name;
 		}
 
 		@Override
 		public String readLine(Console console) throws IOException {
-			if( first != null ) {
-				String line = first;
-				first = null;
-				// (shown, as if typed)
-				window.getStdOut().println(line);
+			if( !typed ) {
+				typed = true;
+				window.getStdOut().println("$ " + line);
 				return line;
 			}
-			return window.readLine(console);
+			window.getStdOut().println();
+			window.getStdOut().println("[" + name + " ended with exit status " + console.getLastExitCode()
+					+ ". Close this window when you are done.]");
+			// the end of the input: the shell leaves
+			return null;
 		}
 
 		@Override
 		public void setPrompt(String prompt) {
-			window.setPrompt(prompt);
+			// (no prompt: nothing more is typed)
 		}
 
 		@Override
 		public void setEditLineText(String text) {
-			window.setEditLineText(text);
 		}
 
 		@Override
