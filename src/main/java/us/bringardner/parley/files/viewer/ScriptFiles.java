@@ -218,21 +218,26 @@ public final class ScriptFiles {
 		String path = System.getenv("PATH");
 		String home = System.getProperty("user.home");
 		String parley = findProgram("parley", path, home);
-		String name = STUDIO;
+		String added = null;
 		if( parley != null ) {
 			try {
 				Path prefix = Paths.get(parley).toRealPath().getParent().getParent();
-				String found = programNamed(STUDIO_ARTIFACT, prefix.resolve("apps"));
-				if( found != null ) {
-					name = found;
-				}
+				added = programNamed(STUDIO_ARTIFACT, prefix.resolve("apps"));
 				// (the commands the launcher makes are in its own bin folder too)
 				path = (path == null ? "" : path + File.pathSeparator) + prefix.resolve("bin");
 			} catch (IOException | RuntimeException e) {
-				// (not an installation we can read: the usual name, on the usual paths)
+				// (not an installation we can read: the usual names, on the usual paths)
 			}
 		}
-		return findProgram(name, path, home);
+		// the name it was added under, else the catalog's name, else the artifact's (what an older
+		// launcher, which doesn't know the catalog's name, makes it)
+		for(String name : new String[] {added, STUDIO, STUDIO_ARTIFACT}) {
+			String found = name == null ? null : findProgram(name, path, home);
+			if( found != null ) {
+				return found;
+			}
+		}
+		return null;
 	}
 
 	/**
