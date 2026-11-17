@@ -288,7 +288,29 @@ public class FileTableModel extends AbstractTableModel {
 		return r.icon;
 	}
 
+	/** What .fsh files show: the Parley icon with the terminal badge (made once). */
+	private static Icon fshIcon;
+
+	private static synchronized Icon fshIcon() {
+		if( fshIcon == null ) {
+			try {
+				fshIcon = new ScriptFiles.FshApp().getIcon(16, 16);
+			} catch (IOException e) {
+				// the registered application's icon, then
+			}
+		}
+		return fshIcon;
+	}
+
 	private Icon getFileIconFor(FileSource f) {
+		// an fsh script is Parley's own: its icon, not the system's for whatever opens the name
+		// (by name only: the first line of every file in a folder isn't read to draw the table)
+		if( f.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".fsh") ) {
+			Icon parley = fshIcon();
+			if( parley != null ) {
+				return parley;
+			}
+		}
 		Icon ret = fileIcon;
 		List<RegData> list = IRegistry.getRegistry().getRegisteredHandler(f.getAbsolutePath(), CommandType.Any);
 		if( list != null && list.size()>0) {
