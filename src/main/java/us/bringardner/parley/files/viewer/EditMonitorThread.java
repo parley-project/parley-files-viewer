@@ -107,7 +107,7 @@ public class EditMonitorThread extends BaseThread implements CopyProgressListner
 								uploadIfWanted(inst);
 							}
 							if(!inst.process.isAlive()) {
-								if(inst.local.lastModified() > inst.remote.lastModified()) {								
+								if(inst.local.lastModified() > inst.remote.contentLastModified()) {								
 									uploadIfWanted(inst);
 								}	
 								complete.add(idx);
