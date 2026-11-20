@@ -1549,7 +1549,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 		try {
 			// (the host is part of the answer: two servers can have the same path)
-			String key = System.identityHashCode(f.getFileSourceFactory())+"|"+f.getAbsolutePath()+"|"+f.lastModified()+"|"+f.length();
+			String key = System.identityHashCode(f.getFileSourceFactory())+"|"+f.getAbsolutePath()+"|"+f.contentLastModified()+"|"+f.contentLength();
 			synchronized (downloads) {
 				File have = downloads.get(key);
 				if (have != null && have.isFile()) {
