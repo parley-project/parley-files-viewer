@@ -53,7 +53,7 @@ public class CopyTransaction implements FileSourceViewer.CopyProgressListner {
 	public CopyTransaction(FileSource source, FileSource dest, CopyFileTableModel model, FileSourceViewer browser) throws IOException {
 		this.source = source;
 		this.dest = dest;
-		this.expected = source.length();
+		this.expected = source.contentLength();
 		this.model = model;
 		//this.row = model.getRowCount();	
 		this.browser = browser;

@@ -183,7 +183,7 @@ public class CopyThread extends BaseThread {
 			long bytesCopied = 0;
 			
 			if( listener != null ) {
-				listener.copyStarted(source.length());
+				listener.copyStarted(source.contentLength());
 			}
 			while(!stopping && running ) {
 				if( listener !=null ) {

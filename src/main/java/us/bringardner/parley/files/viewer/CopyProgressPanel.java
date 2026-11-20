@@ -66,7 +66,7 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 				in = transaction.source.getInputStream(FileSourceCopy.optionsFor(block));
 				out = target.getOutputStream(false, FileSourceCopy.optionsFor(block));
 				long bytesCopied = 0;
-				copyStarted(transaction.source.length());
+				copyStarted(transaction.source.contentLength());
 				while(!stopping && running ) {
 					if(isCanceled() || transaction.canceled) {
 						stop();

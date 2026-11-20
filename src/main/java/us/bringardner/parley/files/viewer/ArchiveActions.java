@@ -226,7 +226,7 @@ class ArchiveActions {
 			}
 		};
 		FileSource tmpDir = folder.getChild(tmp);
-		try (InputStream stdin = zip ? InputStream.nullInputStream() : new CountingInputStream(archive.getInputStream(), archive.length(), progress)) {
+		try (InputStream stdin = zip ? InputStream.nullInputStream() : new CountingInputStream(archive.getInputStream(), archive.contentLength(), progress)) {
 			run(folder, "mkdir "+quote(tmp)+" && "+extract, lines, stdin);
 		} catch (IOException e) {
 			// what was expanded before it failed stays, where it can be seen
