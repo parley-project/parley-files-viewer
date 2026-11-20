@@ -1512,7 +1512,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 		}
 		long size;
 		try {
-			size = f.length();
+			size = f.contentLength();
 		} catch (IOException e) {
 			// (the download fails in its own way, with its own message)
 			return true;
