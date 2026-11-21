@@ -730,11 +730,58 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 		}.execute();
 	}
 
+	/** Tells this window that the folder of its table changed; it is shown again. */
+	private final FolderWatcher watcher = new FolderWatcher(this::watchedFolderChanged, SwingUtilities::invokeLater);
+
+	/** The folder in the table changed (entries added, removed or renamed, by anyone): show it as it is now. Event thread. */
+	private void watchedFolderChanged(FileSource folder) {
+		if( getTable().getModel() instanceof FileTableModel && ((FileTableModel) getTable().getModel()).getDir().equals(folder) ) {
+			forceRefresh();
+		}
+	}
+
+	/** The paths of the rows selected in the table, as long as it shows 'dir'; null when it shows another folder. */
+	private List<String> selectedPaths(JTable table, FileSource dir) {
+		if( !(table.getModel() instanceof FileTableModel) ) {
+			return null;
+		}
+		FileTableModel old = (FileTableModel) table.getModel();
+		if( !dir.equals(old.getDir()) ) {
+			return null;
+		}
+		List<String> ret = new ArrayList<>();
+		for (int row : table.getSelectedRows()) {
+			int index = table.convertRowIndexToModel(row);
+			if( index >= 0 && index < old.getRowCount() ) {
+				ret.add(old.getFile(index).getAbsolutePath());
+			}
+		}
+		return ret;
+	}
+
+	/** Selects the rows of a new model that hold the files that were selected. */
+	private static void reselect(JTable table, FileTableModel model, List<String> paths) {
+		if( paths == null || paths.isEmpty() ) {
+			return;
+		}
+		for (int i = 0; i < model.getRowCount(); i++) {
+			if( paths.contains(model.getFile(i).getAbsolutePath()) ) {
+				int view = table.convertRowIndexToView(i);
+				if( view >= 0 ) {
+					table.addRowSelectionInterval(view, view);
+				}
+			}
+		}
+	}
+
 	/** Gives the table a model whose rows are already read. Event thread. */
 	public void setTableModel(FileTableModel model) {
 		tableGeneration++;
 		JTable table = getTable();
+		// the same folder shown again (a refresh, a change): what was selected stays selected
+		List<String> selected = selectedPaths(table, model.getDir());
 		table.setModel(model);
+		watcher.watch(model.getDir());
 		if( columnWidths!=null ) {
 			inSetTableModel = true;
 			TableColumnModel cm = table.getColumnModel();
@@ -747,6 +794,7 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 			inSetTableModel = false;
 			table.updateUI();
 		}
+		reselect(table, model, selected);
 	}
 
 	/**
@@ -1786,6 +1834,12 @@ Panel.font = javax.swing.plaf.FontUIResource
 				}
 			});
 		}
+		frame.addWindowListener(new WindowAdapter(){
+			@Override
+			public void windowClosed(WindowEvent e){
+				watcher.close();
+			}
+		});
 
 		// The Parley app icon with the folder badge, in every size; the OS picks the one each place needs
 		frame.setIconImages(ParleyBrand.appIcons("files"));

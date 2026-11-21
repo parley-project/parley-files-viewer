@@ -2,6 +2,16 @@
 
 ## parley-files-viewer 2.0.0 (unreleased)
 
+### Added (2026-11-21: the folder in the table refreshes when it changes, D90, D94)
+
+- **A window shows the changes made to the folder in its table**: an entry added, removed or renamed (by
+  anyone: another program, another NFS client) refreshes the table and the tree, with no need to choose Refresh.
+  `FolderWatcher` watches the one folder shown, with its factory's own watch service (the operating system for local
+  folders on Linux and Windows, the change attribute for NFS, a poll every 2 seconds for the others), tells the window
+  once for a burst of changes, and a folder that can't be watched is just not watched. The system property
+  `parley.files.viewer.watch=false` turns it off. Changes to the content of a file are not watched.
+- **A refresh keeps the rows that were selected** in the table (it used to clear the selection).
+
 ### Changed (2026-11-16: Java 17, so passwords can be saved to the keychain)
 
 - **The viewer needs Java 17** (was 11). The keychain provider (parley-credentials-keychain, which
