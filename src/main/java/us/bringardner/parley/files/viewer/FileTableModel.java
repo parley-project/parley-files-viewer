@@ -67,6 +67,8 @@ public class FileTableModel extends AbstractTableModel {
 		final String name;
 		final long lastModified;
 		final boolean directory;
+		/** a macOS application (a .app folder, which is shown as a file) */
+		final boolean application;
 		final long length;
 		final boolean readable;
 		final boolean link;
@@ -80,10 +82,11 @@ public class FileTableModel extends AbstractTableModel {
 			this.file = file;
 			this.name = file.getName().trim();
 			long lm = 0, len = 0;
-			boolean dir = false, rd = false, lk = false;
+			boolean dir = false, rd = false, lk = false, app = false;
 			String err = null;
 			try {
 				dir = file.isDirectory();
+				app = dir && AppBundles.isAppBundle(file);
 				lm = file.lastModified();
 				len = dir ? -1 : file.length();
 				lk = file.getLinkedTo() != null;
@@ -92,7 +95,9 @@ public class FileTableModel extends AbstractTableModel {
 				err = e.getMessage();
 			}
 			this.lastModified = lm;
-			this.directory = dir;
+			// (an application is a folder that is not shown as one)
+			this.directory = dir && !app;
+			this.application = app;
 			this.length = len;
 			this.link = lk;
 			this.readable = rd;
@@ -217,6 +222,11 @@ public class FileTableModel extends AbstractTableModel {
 		return rows[row].directory;
 	}
 
+	/** Whether the file in a row (model index) is an application (a .app folder), as it was when the folder was loaded. */
+	public boolean isApplication(int row) {
+		return rows[row].application;
+	}
+
 	/** Whether the file in a row (model index) can be read, as its icon shows. */
 	public boolean isReadable(int row) {
 		return rows[row].readable;
@@ -265,7 +275,7 @@ public class FileTableModel extends AbstractTableModel {
 			ret = new Date(r.lastModified);
 			break;
 		case 3:
-			ret = r.link ? "Link" : r.directory ? "Dir" : "File";
+			ret = r.link ? "Link" : r.application ? "App" : r.directory ? "Dir" : "File";
 			break;
 		case 4:
 			ret = r.directory ? -1 : r.length;

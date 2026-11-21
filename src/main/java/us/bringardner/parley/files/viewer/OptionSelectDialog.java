@@ -252,7 +252,7 @@ public class OptionSelectDialog extends JDialog {
 						boolean ret = false;
 						try {
 							if( f.isDirectory()) {
-								ret = f.getName().endsWith(".app");
+								ret = AppBundles.isAppBundle(f);
 							} else {
 								ret = f.canExecute();
 							}
@@ -274,7 +274,7 @@ public class OptionSelectDialog extends JDialog {
 						boolean ret = false;
 						try {
 							if( f.isDirectory()) {
-								ret = f.getName().endsWith(".app");
+								ret = AppBundles.isAppBundle(f);
 							} else {
 								ret = f.canExecute();
 							}
