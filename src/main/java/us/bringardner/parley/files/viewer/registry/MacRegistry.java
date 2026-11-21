@@ -348,6 +348,28 @@ public class MacRegistry implements IRegistry {
 
 	}
 
+	/**
+	 * A directory is an application when its name ends .app and Launch Services has an answer for
+	 * it: a valid bundle is its own handler, and a folder that is only named so has none. This asks
+	 * Launch Services itself and not getInstance, whose list leaves out some applications
+	 * (System Information, and one inside another application) that are valid ones.
+	 */
+	@Override
+	public boolean isApplication(String path) {
+		if( path == null || !LaunchServices.isAvailable() ) {
+			return false;
+		}
+		File dir = new File(path.trim());
+		if( !dir.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".app") || !dir.isDirectory() ) {
+			return false;
+		}
+		try {
+			return !LaunchServices.handlersForPath(dir.getPath(), LaunchServices.Role.ALL).apps.isEmpty();
+		} catch (RuntimeException e) {
+			return false;
+		}
+	}
+
 	@Override
 	public List<RegData> getRegisteredHandler(String path, CommandType type) {
 		List<RegData> ret = new ArrayList<>();

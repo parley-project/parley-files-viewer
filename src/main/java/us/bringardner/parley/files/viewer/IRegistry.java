@@ -123,5 +123,17 @@ public interface IRegistry {
 
 	List<RegData> getRegisteredHandler(String path,CommandType type);
 
+	/**
+	 * Whether a directory is an application that starts as one program (a macOS .app bundle),
+	 * and so is not a folder to browse. Only the registry knows: a folder that is merely named
+	 * X.app is not one.
+	 *
+	 * @param path a directory on this computer
+	 * @return true if it is an application; false where the system has no such directories
+	 */
+	default boolean isApplication(String path) {
+		return false;
+	}
+
 	
 }
