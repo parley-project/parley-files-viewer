@@ -913,6 +913,10 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 						} else {
 							int row2 = t.convertRowIndexToModel(row);
 							destination = m.getFile(row2);
+							if( AppBundles.isAppBundle(destination) ) {
+								// (nothing is copied into an application: into the folder shown)
+								destination = m.getDir();
+							}
 						}
 					} else if (comp instanceof JTree) {
 						JTree t = (JTree)comp;
@@ -1071,6 +1075,8 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 	private ActionContext popupSelection;
 	private JMenuItem itemRefresh;
 	private JMenuItem itemOpenTerminal;
+	/** Show Package Contents: browses inside an application, which a double-click starts */
+	private JMenuItem itemShowPackage;
 	private JMenuItem itemNewFolder;
 	private JMenuItem itemFind;
 	private JMenuItem itemEdit;
@@ -1083,6 +1089,10 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 
 	List<JMenuItem> dirReadMenus  = new ArrayList<>();
 	List<JMenuItem> dirWriteMenus = new ArrayList<>();
+
+	/** what an application (a macOS .app) gets: it is a file to open, copy or delete, not a folder to paste into */
+	List<JMenuItem> appReadMenus  = new ArrayList<>();
+	List<JMenuItem> appWriteMenus = new ArrayList<>();
 
 	//private Session factory;
 	private FileSourceFactory factory;
@@ -1908,7 +1918,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 						if( sel != null ) {
 							try {
 								for (FileSource f : sel.files) {
-									if(f.isDirectory()) {
+									if(f.isDirectory() && !AppBundles.isAppBundle(f)) {
 										selectInTree(f);
 									} else {
 										open(f);
@@ -2187,6 +2197,28 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 		dirReadMenus  = Arrays.asList(itemOpenTerminal,itemCopy,itemOpen,itemRefresh,itemFind);
 		dirWriteMenus = Arrays.asList(itemOpenTerminal,itemDelete,itemRename,itemNewFolder);
+
+		itemShowPackage = new JMenuItem("Show Package Contents");
+		itemShowPackage.addActionListener(new ActionListener() {
+
+			public void actionPerformed(ActionEvent evt) {
+				ActionContext sel = getSelectedFromTable();
+				if( sel != null ) {
+					try {
+						for (FileSource f : sel.files) {
+							if( AppBundles.isAppBundle(f) ) {
+								selectInTree(f);
+								return;
+							}
+						}
+					} catch (Exception e) {
+						showError("Error showing the package contents",e);
+					}
+				}
+			}
+		});
+		appReadMenus  = Arrays.asList(itemOpen,itemShowPackage,itemCopy);
+		appWriteMenus = Arrays.asList(itemDelete,itemRename);
 
 		new Thread(()-> {
 			try {
@@ -2501,7 +2533,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 							//checkForClipboardContent sets itemPaste based on clipBoard content 
 							checkForClipboardContent();
-							if(itemPaste.isEnabled() && file.canWrite() && file.isDirectory()) {
+							if(itemPaste.isEnabled() && file.canWrite() && file.isDirectory() && !AppBundles.isAppBundle(file)) {
 								popup.add(itemPaste);								 
 							} 
 
@@ -2518,7 +2550,8 @@ Panel.font = javax.swing.plaf.FontUIResource
 					ActionContext list = getSelectedFromTable();
 					for (FileSource f : list.files) {
 						try {
-							if( f.isDirectory()) {
+							// (an application is started, as it is in Finder; Show Package Contents browses it)
+							if( f.isDirectory() && !AppBundles.isAppBundle(f) ) {
 								findInTree(f, tp->{
 									setSelectionPath(tp);
 									capturedPath = tp;
@@ -2786,7 +2819,15 @@ Panel.font = javax.swing.plaf.FontUIResource
 	protected void buildPopupFor(FileSource file) throws IOException {
 		// assume removeAll and set paste is done ahead of time
 		List<JMenuItem> tmp = new ArrayList<>();
-		if( file.isFile()) {
+		if( AppBundles.isAppBundle(file) ) {
+			// an application: opened, copied or deleted as a file is, and not a folder to make a folder in
+			if( file.canRead()) {
+				tmp.addAll(appReadMenus);
+			}
+			if( file.canWrite()) {
+				tmp.addAll(appWriteMenus);
+			}
+		} else if( file.isFile()) {
 			if( file.canRead()) {
 				tmp.addAll(fileReadMenus);
 			}
@@ -3522,7 +3563,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 	private ActionContext pasteTarget() {
 		ActionContext sel = menuSelection();
 		try {
-			if( sel.files.size() == 1 && sel.files.get(0).isDirectory() ) {
+			if( sel.files.size() == 1 && sel.files.get(0).isDirectory() && !AppBundles.isAppBundle(sel.files.get(0)) ) {
 				return sel;
 			}
 		} catch (IOException e) {

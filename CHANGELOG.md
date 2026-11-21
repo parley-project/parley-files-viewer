@@ -2,6 +2,21 @@
 
 ## parley-files-viewer 2.0.0 (unreleased)
 
+### Added (2026-11-21: a macOS application is shown as a file, not a folder)
+
+- **A `.app` folder is an application, not a folder to browse**: in the table it shows as an `App` (with the
+  application's own icon and no size), a double-click starts it as Finder does, and it is no longer a place to
+  paste or drop files into (that would put them inside the bundle). **Show Package Contents** in its menu browses
+  inside it; the tree still lists it as a folder, so that works as it did. Copy, Delete, Rename and Compress
+  are as for any folder.
+- **The registry says what is an application** (`IRegistry.isApplication`, new): on a Mac a name ending `.app` is
+  asked about Launch Services, which has an answer only for a valid bundle, so a folder that is merely named
+  `x.app` stays a folder. A name that doesn't end `.app` is never asked, the answers are kept (`AppBundles`),
+  and only a folder on this computer can be one. Where the system has no such thing (Windows, Linux) nothing is
+  an application and nothing changes.
+- **Choosing a program (Open With > Other...)** accepts a `.app` only if it is a valid application (it took any
+  folder with that name).
+
 ### Added (2026-11-21: the folder in the table refreshes when it changes, D90, D94)
 
 - **A window shows the changes made to the folder in its table**: an entry added, removed or renamed (by
