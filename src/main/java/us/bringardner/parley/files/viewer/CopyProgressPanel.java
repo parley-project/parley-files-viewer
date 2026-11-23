@@ -655,6 +655,14 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 	}
 
 
+	/** Is file directly in dir (same file system and same canonical folder)? */
+	private static boolean isSameFolder(FileSource file, FileSource dir) throws IOException {
+		FileSource parent = file.getParentFile();
+		return parent != null
+				&& parent.getFileSourceFactory().isSameFileSystem(dir.getFileSourceFactory())
+				&& parent.getCanonicalPath().equals(dir.getCanonicalPath());
+	}
+
 	public void addCopy(List<FileSource> list, FileSource dst) {
 		if( viewer == null) {
 			System.out.println("Null viewer");
@@ -686,6 +694,17 @@ public class CopyProgressPanel extends JPanel implements FileSourceViewer.CopyPr
 
 		for(FileSource file : list) {
 			try {
+				if( isSameFolder(file, dst) ) {
+					// already directly in the folder it is copied to: nothing to do
+					continue;
+				}
+				if( file.isDirectory() && file.isChildOfMine(dst) ) {
+					// a folder copied into itself or one of its own folders never ends
+					if( viewer!=null ) {
+						viewer.showError("Can't copy "+file.getName()+" into itself ("+dst+")", null);
+					}
+					continue;
+				}
 				if(file.isDirectory()) {
 					dialog.setShowAppliesToAll(true);
 				}

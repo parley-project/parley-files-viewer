@@ -913,8 +913,8 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 						} else {
 							int row2 = t.convertRowIndexToModel(row);
 							destination = m.getFile(row2);
-							if( AppBundles.isAppBundle(destination) ) {
-								// (nothing is copied into an application: into the folder shown)
+							if( !destination.isDirectory() || AppBundles.isAppBundle(destination) ) {
+								// (nothing is copied into a file or an application: into the folder shown)
 								destination = m.getDir();
 							}
 						}
@@ -939,7 +939,20 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 						destination = node.dir;
 					}
 
-					if( newFiles !=null && newFiles.size()>0 && destination !=null) {
+					if( destination != null ) {
+						// a click that moved a little is a drop on what was dragged: not a copy
+						// (a folder into itself)
+						String target = destination.getCanonicalPath();
+						List<FileSource> others = new ArrayList<>();
+						for(FileSource f : newFiles) {
+							if( !f.getCanonicalPath().equals(target) ) {
+								others.add(f);
+							}
+						}
+						newFiles = others;
+					}
+
+					if( newFiles.size()>0 && destination !=null) {
 						getCopyProgressPanel().addCopy(newFiles, destination);
 					}
 
@@ -1771,6 +1784,9 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 	private void open1Local(File local) {
 		try {
+			if( AppBundles.isAppBundle(FileProxyFactory.fileProxyFactory.createFileSource(local.getAbsolutePath())) && startApplication(local) ) {
+				return;
+			}
 			Desktop.getDesktop().open(local);
 		} catch (IOException e1) {
 			IRegistry reg = IRegistry.getRegistry();
@@ -3608,6 +3624,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			FileSourceViewer window = new FileSourceViewer();
 			window.startAt = dir;
 			window.setup(file.getFileSourceFactory(), true);
+			window.cascadeFrom(this);
 			window.show();
 		} catch (IOException e) {
 			showError("Can't open "+file.getAbsolutePath(), e);
@@ -4286,6 +4303,46 @@ Panel.font = javax.swing.plaf.FontUIResource
 		}
 	}
 
+	/**
+	 * Starts a macOS application: the registry says which application is to be used for it, and the
+	 * open command starts that one (open /path/X.app), as Finder does and where Desktop.open() does
+	 * not work. The command's own error is shown if it fails.
+	 *
+	 * @return true if the application was handed to open (false: the command could not be started,
+	 *         and the caller opens it another way)
+	 */
+	private boolean startApplication(File app) {
+		String exe = app.getAbsolutePath();
+		List<RegData> handlers = IRegistry.getRegistry().getRegisteredHandler(exe, CommandType.Any);
+		if( handlers != null && !handlers.isEmpty() && handlers.get(0).path != null ) {
+			exe = handlers.get(0).path;
+		}
+		Process proc;
+		try {
+			proc = new ProcessBuilder("open", exe).redirectErrorStream(true).start();
+		} catch (IOException e) {
+			return false;
+		}
+		Thread t = new Thread(()->{
+			try (InputStream in = proc.getInputStream()) {
+				String out = new String(in.readAllBytes()).trim();
+				int exit = proc.waitFor();
+				if( exit != 0 ) {
+					SwingUtilities.invokeLater(()->
+						MessageDialog.showErrorDialog("Can't open "+app, out.isEmpty() ? "open exited with code "+exit : out));
+				}
+			} catch (InterruptedException e) {
+				proc.destroy();
+				Thread.currentThread().interrupt();
+			} catch (IOException e) {
+				proc.destroy();
+			}
+		}, "Open "+app.getName());
+		t.setDaemon(true);
+		t.start();
+		return true;
+	}
+
 	public void open(FileSource file) {
 		// an fsh script on this computer is run by fsh
 		if( file instanceof FileProxy && ScriptFiles.isFshScript(file) ) {
@@ -4294,6 +4351,11 @@ Panel.font = javax.swing.plaf.FontUIResource
 		}
 		if (file instanceof FileProxy) {
 			File local = ((FileProxy) file).getTarget();								
+			// an application is started by the system's own open command: Desktop.open() fails
+			// for it ("Error code -1") where the command works
+			if( AppBundles.isAppBundle(file) && startApplication(local) ) {
+				return;
+			}
 			try {
 				Desktop.getDesktop().open(local);
 			} catch (IOException e) {
