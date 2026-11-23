@@ -3924,9 +3924,48 @@ Panel.font = javax.swing.plaf.FontUIResource
 		}
 	}
 
+	/**
+	 * Starts a macOS application as the open command does (open /path/X.app), which is what Finder
+	 * does and what works where Desktop.open() does not. The command's own error is shown if it fails.
+	 *
+	 * @return true if the application was handed to open (false: the command could not be started,
+	 *         and the caller opens it another way)
+	 */
+	private boolean startApplication(File app) {
+		Process proc;
+		try {
+			proc = new ProcessBuilder("open", app.getAbsolutePath()).redirectErrorStream(true).start();
+		} catch (IOException e) {
+			return false;
+		}
+		Thread t = new Thread(()->{
+			try (InputStream in = proc.getInputStream()) {
+				String out = new String(in.readAllBytes()).trim();
+				int exit = proc.waitFor();
+				if( exit != 0 ) {
+					SwingUtilities.invokeLater(()->
+						MessageDialog.showErrorDialog("Can't open "+app, out.isEmpty() ? "open exited with code "+exit : out));
+				}
+			} catch (InterruptedException e) {
+				proc.destroy();
+				Thread.currentThread().interrupt();
+			} catch (IOException e) {
+				proc.destroy();
+			}
+		}, "Open "+app.getName());
+		t.setDaemon(true);
+		t.start();
+		return true;
+	}
+
 	public void open(FileSource file) {
 		if (file instanceof FileProxy) {
 			File local = ((FileProxy) file).getTarget();								
+			// an application is started by the system's own open command: Desktop.open() fails
+			// for it ("Error code -1") where the command works
+			if( AppBundles.isAppBundle(file) && startApplication(local) ) {
+				return;
+			}
 			try {
 				Desktop.getDesktop().open(local);
 			} catch (IOException e) {
