@@ -3204,6 +3204,7 @@ Panel.font = javax.swing.plaf.FontUIResource
 			FileSourceViewer window = new FileSourceViewer();
 			window.startAt = dir;
 			window.setup(file.getFileSourceFactory(), true);
+			window.cascadeFrom(this);
 			window.show();
 		} catch (IOException e) {
 			showError("Can't open "+file.getAbsolutePath(), e);
