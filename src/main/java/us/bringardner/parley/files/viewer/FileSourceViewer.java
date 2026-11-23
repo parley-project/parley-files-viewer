@@ -862,8 +862,8 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 						} else {
 							int row2 = t.convertRowIndexToModel(row);
 							destination = m.getFile(row2);
-							if( AppBundles.isAppBundle(destination) ) {
-								// (nothing is copied into an application: into the folder shown)
+							if( !destination.isDirectory() || AppBundles.isAppBundle(destination) ) {
+								// (nothing is copied into a file or an application: into the folder shown)
 								destination = m.getDir();
 							}
 						}
@@ -888,7 +888,20 @@ public class FileSourceViewer extends FileSourceViewerBase implements ClipboardO
 						destination = node.dir;
 					}
 
-					if( newFiles !=null && newFiles.size()>0 && destination !=null) {
+					if( destination != null ) {
+						// a click that moved a little is a drop on what was dragged: not a copy
+						// (a folder into itself)
+						String target = destination.getCanonicalPath();
+						List<FileSource> others = new ArrayList<>();
+						for(FileSource f : newFiles) {
+							if( !f.getCanonicalPath().equals(target) ) {
+								others.add(f);
+							}
+						}
+						newFiles = others;
+					}
+
+					if( newFiles.size()>0 && destination !=null) {
 						getCopyProgressPanel().addCopy(newFiles, destination);
 					}
 
