@@ -3925,16 +3925,22 @@ Panel.font = javax.swing.plaf.FontUIResource
 	}
 
 	/**
-	 * Starts a macOS application as the open command does (open /path/X.app), which is what Finder
-	 * does and what works where Desktop.open() does not. The command's own error is shown if it fails.
+	 * Starts a macOS application: the registry says which application is to be used for it, and the
+	 * open command starts that one (open /path/X.app), as Finder does and where Desktop.open() does
+	 * not work. The command's own error is shown if it fails.
 	 *
 	 * @return true if the application was handed to open (false: the command could not be started,
 	 *         and the caller opens it another way)
 	 */
 	private boolean startApplication(File app) {
+		String exe = app.getAbsolutePath();
+		List<RegData> handlers = IRegistry.getRegistry().getRegisteredHandler(exe, CommandType.Any);
+		if( handlers != null && !handlers.isEmpty() && handlers.get(0).path != null ) {
+			exe = handlers.get(0).path;
+		}
 		Process proc;
 		try {
-			proc = new ProcessBuilder("open", app.getAbsolutePath()).redirectErrorStream(true).start();
+			proc = new ProcessBuilder("open", exe).redirectErrorStream(true).start();
 		} catch (IOException e) {
 			return false;
 		}
