@@ -1711,6 +1711,9 @@ Panel.font = javax.swing.plaf.FontUIResource
 
 	private void open1Local(File local) {
 		try {
+			if( AppBundles.isAppBundle(FileProxyFactory.fileProxyFactory.createFileSource(local.getAbsolutePath())) && startApplication(local) ) {
+				return;
+			}
 			Desktop.getDesktop().open(local);
 		} catch (IOException e1) {
 			IRegistry reg = IRegistry.getRegistry();
