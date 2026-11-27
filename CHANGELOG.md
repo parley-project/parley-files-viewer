@@ -4,9 +4,9 @@
 
 ### Changed (2026-11-27: a remote window's title names the host)
 
-- **The title bar of a remote window starts with the host**: the file system's own title (for example
-  `sftp://user@host:22`) is shown before the current path, so windows on different hosts can be told apart.
-  A window on this computer still shows just the path.
+- **The title bar of a remote window starts with the host name** (for example `myhost /home/x`), so windows
+  on different hosts can be told apart. A file system with no host (an archive, memory) shows its own title
+  there instead. A window on this computer still shows just the path.
 
 ### Added (2026-11-21: a macOS application is shown as a file, not a folder)
 

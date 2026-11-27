@@ -2905,10 +2905,13 @@ Panel.font = javax.swing.plaf.FontUIResource
 		return ret;
 	}
 
+	/** The host in a factory title such as sftp://user@host:22: after "://", past any user name, up to a port, path or space. */
+	private static final java.util.regex.Pattern HOST_IN_TITLE = java.util.regex.Pattern.compile("://(?:[^@/\\s]*@)?([^:/\\s]+)");
+
 	/**
 	 * The window title: the current path, and for a remote window (any factory but the local default) the
-	 * factory's title first, which names the host (e.g. sftp://user@host:22), so windows on different hosts
-	 * can be told apart.
+	 * host first (e.g. myhost), so windows on different hosts can be told apart. A factory whose title names
+	 * no host (an archive, memory) puts its own title first instead.
 	 */
 	protected String titleFor(FileSource dir) {
 		String path = dir.getAbsolutePath();
@@ -2916,8 +2919,12 @@ Panel.font = javax.swing.plaf.FontUIResource
 		if( f == null || f.equals(FileSourceFactory.getDefaultFactory()) ) {
 			return path;
 		}
-		String host = f.getTitle();
-		return host == null || host.isEmpty() ? path : host+" "+path;
+		String title = f.getTitle();
+		if( title == null || title.isEmpty() ) {
+			return path;
+		}
+		java.util.regex.Matcher m = HOST_IN_TITLE.matcher(title);
+		return (m.find() ? m.group(1) : title)+" "+path;
 	}
 
 	protected void setStatus( FileSource dir) {
