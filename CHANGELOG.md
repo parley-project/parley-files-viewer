@@ -2,6 +2,12 @@
 
 ## parley-files-viewer 2.0.0 (unreleased)
 
+### Changed (2026-11-27: a remote window's title names the host)
+
+- **The title bar of a remote window starts with the host**: the file system's own title (for example
+  `sftp://user@host:22`) is shown before the current path, so windows on different hosts can be told apart.
+  A window on this computer still shows just the path.
+
 ### Added (2026-11-21: a macOS application is shown as a file, not a folder)
 
 - **A `.app` folder is an application, not a folder to browse**: in the table it shows as an `App` (with the

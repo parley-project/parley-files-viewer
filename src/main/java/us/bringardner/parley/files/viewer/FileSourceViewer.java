@@ -2905,10 +2905,25 @@ Panel.font = javax.swing.plaf.FontUIResource
 		return ret;
 	}
 
+	/**
+	 * The window title: the current path, and for a remote window (any factory but the local default) the
+	 * factory's title first, which names the host (e.g. sftp://user@host:22), so windows on different hosts
+	 * can be told apart.
+	 */
+	protected String titleFor(FileSource dir) {
+		String path = dir.getAbsolutePath();
+		FileSourceFactory f = factory;
+		if( f == null || f.equals(FileSourceFactory.getDefaultFactory()) ) {
+			return path;
+		}
+		String host = f.getTitle();
+		return host == null || host.isEmpty() ? path : host+" "+path;
+	}
+
 	protected void setStatus( FileSource dir) {
 		JPanel status = getStatusPanel();
 		status.removeAll();
-		setTitle(dir.getAbsolutePath());
+		setTitle(titleFor(dir));
 		ActionListener goTo = new ActionListener() {
 
 
