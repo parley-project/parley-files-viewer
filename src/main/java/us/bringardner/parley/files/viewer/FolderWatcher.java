@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
+import us.bringardner.parley.core.BaseObject;
 import us.bringardner.parley.core.NamedExecutors;
 import us.bringardner.parley.files.FileSource;
 import us.bringardner.parley.files.FileSourceWatchEvent;
@@ -48,12 +49,10 @@ import us.bringardner.parley.files.FileSourceWatchService;
  * can't be watched is just not watched; the user still has Refresh. The system property
  * {@value #PROPERTY_WATCH} = false turns the watching off.
  */
-class FolderWatcher implements AutoCloseable {
+class FolderWatcher extends BaseObject implements AutoCloseable {
 
 	static final String PROPERTY_WATCH = "parley.files.viewer.watch";
 	static final long QUIET_MILLIS = 150;
-
-	private static final System.Logger LOG = System.getLogger(FolderWatcher.class.getName());
 
 	private final Consumer<FileSource> changed;
 	private final Executor executor;
@@ -109,7 +108,7 @@ class FolderWatcher implements AutoCloseable {
 		try {
 			current = new Watch(folder);
 		} catch (IOException | RuntimeException e) {
-			LOG.log(System.Logger.Level.DEBUG, "Not watching "+folder+": "+e);
+			logDebug("Not watching "+folder+": "+e);
 		}
 	}
 
